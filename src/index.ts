@@ -294,7 +294,7 @@ export function apply(ctx: Context, config: Config) {
   ctx.command('toutai', '投胎模拟器帮助')
     .action(async ({session}) => {
       if (isQQOfficialRobotMarkdownTemplateEnabled && session.platform === 'qq') {
-        return await sendMessage(session, `👨♂ 《投胎模拟器》 -♀👩
+        return await sendMessage(session, `👨♂- 《投胎模拟器》 -♀👩
 😆 欢迎游玩~ 祝您玩得开心！`, `投胎中国排行榜 投胎世界排行榜 中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`, 2, false)
       }
       await session.execute(`toutai -h`)
@@ -814,7 +814,7 @@ export function apply(ctx: Context, config: Config) {
       const randomIndex = Math.floor(Math.random() * worldData.length);
       const selected = worldData[randomIndex];
 
-      if (selected.birthRatePercentage > randomValue) {
+      if (selected.birthRatePercentage * 100 > randomValue) {
         selectedCountry = selected;
       }
     }

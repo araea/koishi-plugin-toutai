@@ -17,13 +17,13 @@
 
 ## ⚙️ 配置项
 
+- `imageType`: 发送的图片类型。
 - `defaultMaxDisplayCount`: 排行榜默认显示的人数。
+- `isMapImageIncludedAfterRebirth`: 是否在投胎后包含地图图片。
 - `nextReincarnationCooldownSeconds`: 投胎的冷却时间，单位是秒。
 - `shouldPrefixUsernameInMessageSending`: 是否在发送消息时加上 @用户名。
 - `retractDelay`: 自动撤回等待的时间，单位是秒。值为 0 时不启用自动撤回功能。
-- `isMapImageIncludedAfterRebirth`: 是否在投胎后包含地图图片。
-- `imageType`: 发送的图片类型。
-- `isTextToImageConversionEnabled`: 是否开启将文本转为图片的功能。
+- `isTextToImageConversionEnabled`: 是否开启将文本转为图片的功能（可选），如需启用，需要启用 \`markdownToImage\` 服务。
 - `isEnableQQOfficialRobotMarkdownTemplate`: 是否启用 QQ 官方机器人的 Markdown 模板，带消息按钮。
   - `customTemplateId`：自定义模板 ID。
   - `key`：文本内容中特定插值的 key。
