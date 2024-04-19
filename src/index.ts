@@ -1574,31 +1574,31 @@ export function apply(ctx: Context, config: Config) {
     </tr>
     <tr>
         <td>非洲次数</td>
-        <td>${dictContinentCounts['非洲']} 次 ${Math.floor(dictContinentCounts['非洲']) / totalCount * 100}%</td>
+        <td>${dictContinentCounts['非洲']} 次 ${Math.floor(Math.floor(dictContinentCounts['非洲']) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>欧洲次数</td>
-        <td>${dictContinentCounts['欧洲']} 次 ${Math.floor(dictContinentCounts['欧洲']) / totalCount * 100}%</td>
+        <td>${dictContinentCounts['欧洲']} 次 ${Math.floor(Math.floor(dictContinentCounts['欧洲']) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>亚洲次数</td>
-        <td>${dictContinentCounts['亚洲']} 次 ${Math.floor(dictContinentCounts['亚洲']) / totalCount * 100}%</td>
+        <td>${dictContinentCounts['亚洲']} 次 ${Math.floor(Math.floor(dictContinentCounts['亚洲']) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>北美洲次数</td>
-        <td>${dictContinentCounts['北美洲']} 次 ${Math.floor(dictContinentCounts['北美洲']) / totalCount * 100}%</td>
+        <td>${dictContinentCounts['北美洲']} 次 ${Math.floor(Math.floor(dictContinentCounts['北美洲']) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>南美洲次数</td>
-        <td>${dictContinentCounts['南美洲']} 次 ${Math.floor(dictContinentCounts['南美洲']) / totalCount * 100}%</td>
+        <td>${dictContinentCounts['南美洲']} 次 ${Math.floor(Math.floor(dictContinentCounts['南美洲']) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>大洋洲次数</td>
-        <td>${dictContinentCounts['大洋洲']} 次 ${Math.floor(dictContinentCounts['大洋洲']) / totalCount * 100}%</td>
+        <td>${dictContinentCounts['大洋洲']} 次 ${Math.floor(Math.floor(dictContinentCounts['大洋洲']) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>南极洲次数</td>
-        <td>${dictContinentCounts['南极洲']} 次 ${Math.floor(dictContinentCounts['南极洲']) / totalCount * 100}%</td>
+        <td>${dictContinentCounts['南极洲']} 次 ${Math.floor(Math.floor(dictContinentCounts['南极洲']) / totalCount * 100)}%</td>
     </tr>
 </table>
 
@@ -1672,43 +1672,43 @@ export function apply(ctx: Context, config: Config) {
     </tr>
     <tr>
         <td>城镇次数</td>
-        <td>${categoryCounts.城镇} 次 ${Math.floor(categoryCounts.城镇) / totalCount * 100}%</td>
+        <td>${categoryCounts.城镇} 次 ${Math.floor(Math.floor(categoryCounts.城镇) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>城市次数</td>
-        <td>${categoryCounts.城市} 次 ${Math.floor(categoryCounts.城市) / totalCount * 100}%</td>
+        <td>${categoryCounts.城市} 次 ${Math.floor(Math.floor(categoryCounts.城市) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>乡村次数</td>
-        <td>${categoryCounts.乡村} 次 ${Math.floor(categoryCounts.乡村) / totalCount * 100}%</td>
+        <td>${categoryCounts.乡村} 次 ${Math.floor(Math.floor(categoryCounts.乡村) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>男孩次数</td>
-        <td>${genderCounts.male} 次 ${Math.floor(genderCounts.male) / totalCount * 100}%</td>
+        <td>${genderCounts.male} 次 ${Math.floor(Math.floor(genderCounts.male) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>女孩次数</td>
-        <td>${genderCounts.female} 次 ${Math.floor(genderCounts.female) / totalCount * 100}%</td>
+        <td>${genderCounts.female} 次 ${Math.floor(Math.floor(genderCounts.female) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>第一胎次数</td>
-        <td>${orderCounts.一} 次 ${Math.floor(orderCounts.一) / totalCount * 100}%</td>
+        <td>${orderCounts.一} 次 ${Math.floor(Math.floor(orderCounts.一) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>第二胎次数</td>
-        <td>${orderCounts.二} 次 ${Math.floor(orderCounts.二) / totalCount * 100}%</td>
+        <td>${orderCounts.二} 次 ${Math.floor(Math.floor(orderCounts.二) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>第三胎次数</td>
-        <td>${orderCounts.三} 次 ${Math.floor(orderCounts.三) / totalCount * 100}%</td>
+        <td>${orderCounts.三} 次 ${Math.floor(Math.floor(orderCounts.三) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>第四胎次数</td>
-        <td>${orderCounts.四} 次 ${Math.floor(orderCounts.四) / totalCount * 100}%</td>
+        <td>${orderCounts.四} 次 ${Math.floor(Math.floor(orderCounts.四) / totalCount * 100)}%</td>
     </tr>
     <tr>
         <td>第五胎及以上次数</td>
-        <td>${orderCounts['五及以上']} 次 ${Math.floor(orderCounts['五及以上']) / totalCount * 100}%</td>
+        <td>${orderCounts['五及以上']} 次 ${Math.floor(Math.floor(orderCounts['五及以上']) / totalCount) * 100}%</td>
     </tr>
 </table>
 
