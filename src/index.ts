@@ -23,7 +23,11 @@ export const usage = `## 🌈 使用
 - \`toutai.世界投胎记录.总览/成功历史/夭折历史\`: 查看世界投胎记录。
 - \`toutai.中国投胎排行榜.成功次数/夭折次数/男孩次数/女孩次数\`: 查看中国投胎排行榜。
 - \`toutai.世界投胎排行榜.成功次数/夭折次数/亚洲/欧洲/非洲/北美洲/南美洲/南极洲/大洋洲\`: 查看世界投胎排行榜。
-- \`toutai.改名\`: 更改玩家名字。`
+- \`toutai.改名\`: 更改玩家名字。
+
+## 🐱 QQ 群
+
+- 956758505`
 
 export interface Config {
   defaultMaxDisplayCount: number
@@ -1785,7 +1789,7 @@ export function apply(ctx: Context, config: Config) {
 </table>
 
 <script>
-    const birthResultsInChina = [{"id":14,"province":"福建","gender":"female","category":"城市","order":"一","probability":0.003012798906447512,"index":1},{"id":4,"province":"河北","gender":"male","category":"乡村","order":"二","probability":0.003999988615604672,"index":2}]
+    const birthResultsInChina = ${JSON.stringify(birthResultsInChina)};
 
     const provinceData = {};
 
