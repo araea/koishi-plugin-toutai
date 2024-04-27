@@ -1202,7 +1202,7 @@ export function apply(ctx: Context, config: Config) {
             margin-left: 40px;
         }
 
-           h1 {
+        h1 {
             text-align: center;
             font-size: 32px;
         }
@@ -1223,9 +1223,13 @@ export function apply(ctx: Context, config: Config) {
 
     const totalResults = birthResultsInChina.length;
 
+    // Sort provinces by count in descending order
+    const sortedProvinces = Object.entries(provinceCounts)
+            .sort((a, b) => b[1] - a[1]);
+
     const barsContainer = document.getElementById('bars');
 
-    Object.entries(provinceCounts).forEach(([province, count]) => {
+    sortedProvinces.forEach(([province, count]) => {
         const percentage = (count / totalResults) * 100;
 
         const bar = document.createElement('div');
