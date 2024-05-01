@@ -796,6 +796,9 @@ export function apply(ctx: Context, config: Config) {
           return await sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `投胎中国 投胎世界 改名`)
         }
       }
+      if (newPlayerName.includes("@everyone")) {
+        return await sendMessage(session, `新的玩家名字不合法，请重新输入。`, `投胎中国 投胎世界 改名`)
+      }
       const userRecord = await ctx.database.get('toutai_records', {userId});
       if (userRecord.length === 0) {
         await ctx.database.create('toutai_records', {
