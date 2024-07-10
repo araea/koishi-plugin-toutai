@@ -28,6 +28,7 @@
   - `customTemplateId`：自定义模板 ID。
   - `key`：文本内容中特定插值的 key。
   - `numberOfMessageButtonsPerRow`：每行消息按钮的数量。
+  - `isUsingUnifiedKoishiBuiltInUsername`: 是否使用统一的 Koishi 内置用户名。
 
 ## 🌼 指令
 
@@ -41,18 +42,28 @@
 - `toutai.改名`: 更改玩家名字。
 
 ## 🌸 测试图（部分功能）
+
 <details>
 <summary>点击这里展开/折叠内容</summary>
 
 ### 投胎中国
+
 ![db0f4138bfd833c11fdd32f49ad98b32](https://github.com/araea/koishi-plugin-toutai/assets/120614554/d0d00886-cfb6-405c-87e0-b759053d0079)
+
 ### 投胎世界
+
 ![cfef361e06a5a296f0d8bb5ecc5b6dd4](https://github.com/araea/koishi-plugin-toutai/assets/120614554/f6af7b92-237e-4a14-a80b-3f2e9efe6b76)
+
 ### 性别分布
+
 ![46ea7c879a8fa3501e8fc9e4cb817fac](https://github.com/araea/koishi-plugin-toutai/assets/120614554/eace5521-f498-4e58-b4ef-01583b1c076b)
+
 ### 地区分布
+
 ![20bd046909b1e36ed9f0a837f5ed4e43](https://github.com/araea/koishi-plugin-toutai/assets/120614554/cef83aee-c322-473c-a5fd-574668cb9383)
+
 ### ...
+
 </details>
 
 ## 🍧 致谢
