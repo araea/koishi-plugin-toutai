@@ -2421,10 +2421,11 @@ export function apply(ctx: Context, config: Config) {
 
   async function getSessionUserName(session: any): Promise<string> {
     let sessionUserName = session.username;
+    const user = session.user
 
     if (isQQOfficialRobotMarkdownTemplateEnabled && session.platform === 'qq') {
-      if (config.isUsingUnifiedKoishiBuiltInUsername && session.user.name) {
-        sessionUserName = session.user.name
+      if (config.isUsingUnifiedKoishiBuiltInUsername && user.name) {
+        sessionUserName = user.name
       } else {
         let userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
 
