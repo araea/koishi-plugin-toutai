@@ -1,4 +1,4 @@
-import {Context, h, Schema, sleep} from 'koishi'
+import {Context, h, RuntimeError, Schema, sleep} from 'koishi'
 import {} from 'koishi-plugin-markdown-to-image-service'
 import {} from 'koishi-plugin-puppeteer'
 import * as path from 'path';
@@ -43,6 +43,7 @@ export interface Config {
   customTemplateId: string
   key: string
   numberOfMessageButtonsPerRow: number
+  isUsingUnifiedKoishiBuiltInUsername: boolean
 }
 
 // pz* pzx*
@@ -64,6 +65,7 @@ export const Config: Schema<Config> = Schema.intersect([
         customTemplateId: Schema.string().default('').description(`自定义模板 ID。`),
         key: Schema.string().default('').description(`文本内容中特定插值的 key，用于存放文本。如果你的插值为 {{.info}}，那么请在这里填 info。`),
         numberOfMessageButtonsPerRow: Schema.number().min(2).max(5).default(2).description(`每行消息按钮的数量。`),
+        isUsingUnifiedKoishiBuiltInUsername: Schema.boolean().default(true).description(`是否使用统一的 Koishi 内置用户名。`),
       }),
       Schema.object({}),
     ]),
@@ -278,6 +280,7 @@ export function apply(ctx: Context, config: Config) {
   const birthrateDetailedData: BirthrateDetailedData[] = JSON.parse(fs.readFileSync(birthrateDetailedJsonFilePath, 'utf-8'));
   const neonatalMortalityRateData: NeonatalMortalityRateData = JSON.parse(fs.readFileSync(neonatalMortalityRateJsonFilePath, 'utf-8'));
   // cl*
+  const logger = ctx.logger('toutai')
   const isQQOfficialRobotMarkdownTemplateEnabled = config.isEnableQQOfficialRobotMarkdownTemplate && config.key !== '' && config.customTemplateId !== ''
   const macauBirthPopulation = 3712;
   const taiwanBirthPopulation = 137413;
@@ -777,41 +780,76 @@ export function apply(ctx: Context, config: Config) {
   // gm*
   ctx.command('toutai.改名 [newPlayerName:text]', '更改玩家名字')
     .action(async ({session}, newPlayerName) => {
-      let {userId, username} = session
-      username = await getSessionUserName(session)
-      await updateNameInPlayerRecord(session, userId, username)
+      const {userId, user} = session;
+      const username = await getSessionUserName(session);
+      await updateNameInPlayerRecord(session, userId, username);
+
       newPlayerName = newPlayerName?.trim();
       if (!newPlayerName) {
-        return await sendMessage(session, `请输入新的玩家名字。`, `投胎中国 投胎世界 改名`)
+        return sendMessage(session, `请输入新的玩家名字。`, `投胎中国 投胎世界 改名`);
       }
-      if (!(config.isEnableQQOfficialRobotMarkdownTemplate && session.platform === 'qq' && config.key !== '' && config.customTemplateId !== '')) {
-        return await sendMessage(session, `不是 QQ 官方机器人的话，不用改名哦~`, `改名`)
+
+      if (!(config.isEnableQQOfficialRobotMarkdownTemplate && session.platform === 'qq' && config.key && config.customTemplateId)) {
+        return sendMessage(session, `不是 QQ 官方机器人的话，不用改名哦~`, `改名`);
       }
+
       if (newPlayerName.length > 20) {
-        return await sendMessage(session, `新的玩家名字过长，请重新输入。`, `投胎中国 投胎世界 改名`)
+        return sendMessage(session, `新的玩家名字过长，请重新输入。`, `投胎中国 投胎世界 改名`);
       }
-      const players = await ctx.database.get('toutai_records', {});
-      for (const player of players) {
-        if (player.username === newPlayerName) {
-          return await sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `投胎中国 投胎世界 改名`)
-        }
-      }
+
       if (newPlayerName.includes("@everyone")) {
-        return await sendMessage(session, `新的玩家名字不合法，请重新输入。`, `投胎中国 投胎世界 改名`)
+        return sendMessage(session, `新的玩家名字不合法，请重新输入。`, `投胎中国 投胎世界 改名`);
       }
-      const userRecord = await ctx.database.get('toutai_records', {userId});
-      if (userRecord.length === 0) {
-        await ctx.database.create('toutai_records', {
-          userId,
-          username: newPlayerName,
-        });
+
+      if (config.isUsingUnifiedKoishiBuiltInUsername) {
+        return handleUnifiedKoishiUsername(session, user, newPlayerName);
       } else {
-        await ctx.database.set('toutai_records', {userId}, {username: newPlayerName});
+        return handleCustomUsername(ctx, session, userId, newPlayerName);
       }
-      return await sendMessage(session, `玩家名字已更改为：【${newPlayerName}】`, `投胎中国 投胎世界 改名`, 2);
     });
 
+
   // hs*
+
+  async function handleUnifiedKoishiUsername(session, user, newPlayerName) {
+    const name = h.transform(newPlayerName, {text: true, default: false}).trim();
+
+    if (name === user.name) {
+      return sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `投胎中国 投胎世界 改名`);
+    }
+
+    try {
+      user.name = name;
+      await user.$update();
+      return sendMessage(session, `玩家名字已更改为：【${newPlayerName}】`, `投胎中国 投胎世界 改名`, 2);
+    } catch (error) {
+      if (RuntimeError.check(error, 'duplicate-entry')) {
+        return sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `投胎中国 投胎世界 改名`);
+      } else {
+        logger.warn(error);
+        return sendMessage(session, `玩家名字更改失败。`, `投胎中国 投胎世界 改名`);
+      }
+    }
+  }
+
+  async function handleCustomUsername(ctx, session, userId, newPlayerName) {
+    const players = await ctx.database.get('toutai_records', {});
+    if (players.some(player => player.username === newPlayerName)) {
+      return sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `投胎中国 投胎世界 改名`);
+    }
+
+    const userRecord = await ctx.database.get('toutai_records', {userId});
+    if (userRecord.length === 0) {
+      await ctx.database.create('toutai_records', {
+        userId,
+        username: newPlayerName,
+      });
+    } else {
+      await ctx.database.set('toutai_records', {userId}, {username: newPlayerName});
+    }
+    return await sendMessage(session, `玩家名字已更改为：【${newPlayerName}】`, `投胎中国 投胎世界 改名`, 2);
+  }
+
   function simulateRebirthInWorld(worldData: WorldBirthrateData[]): string | null {
     const randomValue = Math.random();
 
@@ -2385,17 +2423,22 @@ export function apply(ctx: Context, config: Config) {
     let sessionUserName = session.username;
 
     if (isQQOfficialRobotMarkdownTemplateEnabled && session.platform === 'qq') {
-      let userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
+      if (config.isUsingUnifiedKoishiBuiltInUsername && session.user.name) {
+        sessionUserName = session.user.name
+      } else {
+        let userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
 
-      if (userRecord.length === 0) {
-        await ctx.database.create('toutai_records', {
-          userId: session.userId,
-          username: sessionUserName,
-        });
+        if (userRecord.length === 0) {
+          await ctx.database.create('toutai_records', {
+            userId: session.userId,
+            username: sessionUserName,
+          });
 
-        userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
+          userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
+        }
+        sessionUserName = userRecord[0].username;
       }
-      sessionUserName = userRecord[0].username;
+
     }
 
     return sessionUserName;
@@ -2586,8 +2629,10 @@ export function apply(ctx: Context, config: Config) {
               }
             })
             .join('\n');
-          const imageBuffer = await ctx.markdownToImage.convertToImage(modifiedMessage);
-          [messageId] = await session.send(h.image(imageBuffer, `image/${config.imageType}`));
+          ctx.inject(['markdownToImage'], async (ctx) => {
+            const imageBuffer = await ctx.markdownToImage.convertToImage(modifiedMessage);
+            [messageId] = await session.send(h.image(imageBuffer, `image/${config.imageType}`));
+          })
         }
         if (config.retractDelay !== 0) {
           isPushMessageId = true;
@@ -2671,8 +2716,10 @@ export function apply(ctx: Context, config: Config) {
               }
             })
             .join('\n');
-          const imageBuffer = await ctx.markdownToImage.convertToImage(modifiedMessage);
-          [messageId] = await session.send(h.image(imageBuffer, `image/${config.imageType}`));
+          ctx.inject(['markdownToImage'], async (ctx) => {
+            const imageBuffer = await ctx.markdownToImage.convertToImage(modifiedMessage);
+            [messageId] = await session.send(h.image(imageBuffer, `image/${config.imageType}`));
+          })
         }
       } else {
         if (config.shouldPrefixUsernameInMessageSending && isAt) {
