@@ -802,7 +802,7 @@ export function apply(ctx: Context, config: Config) {
       }
 
       if (config.isUsingUnifiedKoishiBuiltInUsername) {
-        return handleUnifiedKoishiUsername(session, user, newPlayerName);
+        return handleUnifiedKoishiUsername(session, newPlayerName);
       } else {
         return handleCustomUsername(ctx, session, userId, newPlayerName);
       }
@@ -811,23 +811,24 @@ export function apply(ctx: Context, config: Config) {
 
   // hs*
 
-  async function handleUnifiedKoishiUsername(session, user, newPlayerName) {
-    const name = h.transform(newPlayerName, {text: true, default: false}).trim();
+  async function handleUnifiedKoishiUsername(session, newPlayerName) {
+    newPlayerName = h.transform(newPlayerName, {text: true, default: false}).trim();
 
-    if (name === user.name) {
-      return sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `投胎中国 投胎世界 改名`);
+    const users = await ctx.database.get('user', {});
+    if (users.some(user => user.name === newPlayerName)) {
+      return sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `改名`);
     }
 
     try {
-      user.name = name;
-      await user.$update();
-      return sendMessage(session, `玩家名字已更改为：【${newPlayerName}】`, `投胎中国 投胎世界 改名`, 2);
+      session.user.name = newPlayerName;
+      await session.user.$update();
+      return sendMessage(session, `玩家名字已更改为：【${newPlayerName}】`, `查询玩家记录 开始游戏 改名`, 2);
     } catch (error) {
       if (RuntimeError.check(error, 'duplicate-entry')) {
-        return sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `投胎中国 投胎世界 改名`);
+        return sendMessage(session, `新的玩家名字已经存在，请重新输入。`, `改名`);
       } else {
         logger.warn(error);
-        return sendMessage(session, `玩家名字更改失败。`, `投胎中国 投胎世界 改名`);
+        return sendMessage(session, `玩家名字更改失败。`, `改名`);
       }
     }
   }
@@ -2421,21 +2422,21 @@ export function apply(ctx: Context, config: Config) {
 
   async function getSessionUserName(session: any): Promise<string> {
     let sessionUserName = session.username;
-    const user = session.user
 
     if (isQQOfficialRobotMarkdownTemplateEnabled && session.platform === 'qq') {
+      const [user] = await ctx.database.get('user', {id: session.user.id})
       if (config.isUsingUnifiedKoishiBuiltInUsername && user.name) {
         sessionUserName = user.name
       } else {
-        let userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
+        let userRecord = await ctx.database.get('', {userId: session.userId});
 
         if (userRecord.length === 0) {
-          await ctx.database.create('toutai_records', {
+          await ctx.database.create('wordle_player_records', {
             userId: session.userId,
             username: sessionUserName,
           });
 
-          userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
+          userRecord = await ctx.database.get('wordle_player_records', {userId: session.userId});
         }
         sessionUserName = userRecord[0].username;
       }
