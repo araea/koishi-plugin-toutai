@@ -2428,15 +2428,15 @@ export function apply(ctx: Context, config: Config) {
       if (config.isUsingUnifiedKoishiBuiltInUsername && user.name) {
         sessionUserName = user.name
       } else {
-        let userRecord = await ctx.database.get('', {userId: session.userId});
+        let userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
 
         if (userRecord.length === 0) {
-          await ctx.database.create('wordle_player_records', {
+          await ctx.database.create('toutai_records', {
             userId: session.userId,
             username: sessionUserName,
           });
 
-          userRecord = await ctx.database.get('wordle_player_records', {userId: session.userId});
+          userRecord = await ctx.database.get('toutai_records', {userId: session.userId});
         }
         sessionUserName = userRecord[0].username;
       }
