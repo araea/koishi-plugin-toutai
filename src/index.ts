@@ -2407,9 +2407,9 @@ export function apply(ctx: Context, config: Config) {
     const existingRecord = userRecord[0];
     let isChange = false
 
-    if (username !== existingRecord.username) {
+    if (username !== existingRecord.username && (!(isQQOfficialRobotMarkdownTemplateEnabled && session.platform === 'qq') || (isQQOfficialRobotMarkdownTemplateEnabled && session.platform === 'qq' && config.isUsingUnifiedKoishiBuiltInUsername))) {
       existingRecord.username = username;
-      isChange = true
+      isChange = true;
     }
 
     if (isChange) {
