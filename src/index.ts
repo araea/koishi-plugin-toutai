@@ -2407,7 +2407,7 @@ export function apply(ctx: Context, config: Config) {
     const existingRecord = userRecord[0];
     let isChange = false
 
-    if (username !== existingRecord.username && !(isQQOfficialRobotMarkdownTemplateEnabled && session.platform === 'qq')) {
+    if (username !== existingRecord.username) {
       existingRecord.username = username;
       isChange = true
     }
