@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-toutai",
   "description": "Koishi 的投胎模拟器插件。投胎到中国或世界各地。",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -19,7 +19,7 @@
       ]
     }
   },
-  "license": "MIT",
+  "license": "MIT OR Apache-2.0",
   "author": "Nawyjx <3373167460@qq.com>",
   "homepage": "https://www.npmjs.com/package/koishi-plugin-toutai?activeTab=readme",
   "repository": {
@@ -38,7 +38,7 @@
     "世界投胎"
   ],
   "peerDependencies": {
-    "koishi": "^4.18.0"
+    "koishi": "^4.18.9"
   },
   "devDependencies": {
     "koishi-plugin-markdown-to-image-service": "^1.2.1",
