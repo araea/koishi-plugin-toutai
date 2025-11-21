@@ -1,7 +1,8 @@
-# koishi-plugin-toutai
+koishi-plugin-toutai
+====================
 
-[![github](https://img.shields.io/badge/github-araea/toutai-8da0cb?style=for-the-badge&labelColor=555555&logo=github)](https://github.com/araea/koishi-plugin-toutai)
-[![npm](https://img.shields.io/npm/v/koishi-plugin-toutai.svg?style=for-the-badge&color=fc8d62&logo=npm)](https://www.npmjs.com/package/koishi-plugin-toutai)
+[<img alt="github" src="https://img.shields.io/badge/github-araea/toutai-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/araea/koishi-plugin-toutai)
+[<img alt="npm" src="https://img.shields.io/npm/v/koishi-plugin-toutai.svg?style=for-the-badge&color=fc8d62&logo=npm" height="20">](https://www.npmjs.com/package/koishi-plugin-toutai)
 
 ## 简介
 
@@ -24,10 +25,19 @@ Koishi 的投胎模拟器插件。投胎到中国或世界各地。
 
 - 956758505
 
----
+<br>
 
-### License
+#### License
 
-_Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT) at your option._
+<sup>
+Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
+2.0</a> or <a href="LICENSE-MIT">MIT license</a> at your option.
+</sup>
 
-_Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this crate by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions._
+<br>
+
+<sub>
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in this crate by you, as defined in the Apache-2.0 license, shall
+be dual licensed as above, without any additional terms or conditions.
+</sub>
