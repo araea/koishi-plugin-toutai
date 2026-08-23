@@ -289,6 +289,9 @@ body {
     padding: 34px 36px 24px;
     background: var(--card);
     border: 1px solid var(--line);
+    /* 长名号（尤其是不含空格的西文）不得撑破纸面：截图按 CARD_WIDTH 裁切，溢出即丢失 */
+    overflow: hidden;
+    overflow-wrap: anywhere;
     box-shadow:
         0 0 0 1px rgba(255, 255, 255, .8) inset,
         0 24px 46px -32px rgba(34, 30, 25, .55);
@@ -513,10 +516,22 @@ table.ledger {
 
 .bar-row:last-child { border-bottom: 0; }
 .bar-row .no { font-family: var(--font-serif); font-size: 13px; color: var(--ink-3); text-align: right; }
-.bar-row .rname { font-size: 15.5px; letter-spacing: .05em; color: var(--ink); text-align: right; }
-.bar-row .track { position: relative; height: 13px; background: rgba(34, 30, 25, .06); }
+
+/* 名号一律单行，超出以省略号收尾，绝不挤压条形与次数两栏 */
+.bar-row .rname {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 15.5px;
+    letter-spacing: .05em;
+    color: var(--ink);
+    text-align: right;
+}
+
+.bar-row .track { position: relative; min-width: 0; height: 13px; background: rgba(34, 30, 25, .06); }
 .bar-row .track i { position: absolute; left: 0; top: 0; bottom: 0; min-width: 2px; background: linear-gradient(90deg, var(--tone-soft), var(--tone)); }
-.bar-row .val { font-size: 14.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.bar-row .val { white-space: nowrap; font-size: 14.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .bar-row .val em { margin-left: 7px; font-style: normal; font-size: 12.5px; color: var(--ink-3); }
 
 /* ---------- 版记 ---------- */
@@ -524,15 +539,18 @@ table.ledger {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     margin-top: 24px;
     padding-top: 11px;
     border-top: 1px solid var(--line);
     font-size: 11.5px;
     letter-spacing: .16em;
     color: var(--ink-3);
+    white-space: nowrap;
 }
 
-.colophon .r { letter-spacing: .06em; }
+.colophon > span { flex: none; }
+.colophon .r { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; letter-spacing: .06em; }
 `;
 
 /** 用户可控文本一律转为全角，避免破坏版面（h.unescape 之后仍然安全）。 */
@@ -742,13 +760,47 @@ function orderText(order: string): string {
   return order === "五及以上" ? "五孩及以上" : `第${order}孩`;
 }
 
-function trimUsername(username: string): string {
-  const maxLength = 10;
+/**
+ * 按字素簇切分：表情、肤色修饰、组合字不会被劈成半个码元。
+ * 环境不支持 Intl.Segmenter 时退回码点切分（仍好过 UTF-16 码元）。
+ */
+function splitGraphemes(text: string): string[] {
+  const segmenter = (
+    Intl as unknown as { Segmenter?: typeof Intl.Segmenter }
+  ).Segmenter;
 
-  if (username.length <= maxLength) {
-    return username;
+  if (typeof segmenter === "function") {
+    return Array.from(
+      new segmenter("zh", { granularity: "grapheme" }).segment(text),
+      (piece) => piece.segment,
+    );
+  }
+
+  return Array.from(text);
+}
+
+/**
+ * 名号入版前的统一处理：折叠换行与连续空白、按字素截断。
+ *
+ * 版面宽度固定为 CARD_WIDTH，截图按此宽度裁切，
+ * 因此过长的名号（尤其是不含空格、无法折行的西文）必须在此收住，
+ * 否则会撑破纸面并被裁掉。所有 render* 函数都应经此函数取名。
+ */
+function trimUsername(username: string, maxLength = 10): string {
+  const flattened = String(username ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!flattened) {
+    return "无名氏";
+  }
+
+  const graphemes = splitGraphemes(flattened);
+
+  if (graphemes.length <= maxLength) {
+    return flattened;
   } else {
-    return username.slice(0, maxLength) + "…";
+    return graphemes.slice(0, maxLength).join("") + "…";
   }
 }
 
@@ -804,7 +856,7 @@ function renderGenderDistribution(
   return buildPage({
     docTitle: "中国投胎性别分布",
     title: "中国投胎 · 性别分布",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>阴阳各半，皆是缘法`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>阴阳各半，皆是缘法`,
     seal: "阴阳",
     body: section("男 女 之 数", body, `合计 ${total} 次`),
     colophonRight: `男 ${male} · 女 ${female}`,
@@ -928,7 +980,7 @@ function renderRegionDistribution(
   return buildPage({
     docTitle: "中国投胎地区分布",
     title: "中国投胎 · 地区分布",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>足迹遍及 ${sorted.length} 省`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>足迹遍及 ${sorted.length} 省`,
     seal: "山河",
     body: section(
       "省 份 之 分",
@@ -957,7 +1009,7 @@ function renderWorldDemiseHistory(
   return buildPage({
     docTitle: "世界投胎夭折历史",
     title: "世界投胎 · 夭折历史",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>未及睁眼，已别人间`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>未及睁眼，已别人间`,
     seal: "长夜",
     body: section(
       "殁 者 名 录",
@@ -994,7 +1046,7 @@ function renderWorldBirthHistory(
   return buildPage({
     docTitle: "世界投胎成功历史",
     title: "世界投胎 · 降生纪年",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>山南水北，皆曾为家`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>山南水北，皆曾为家`,
     seal: "寰宇",
     body: section(
       "降 生 名 录",
@@ -1032,7 +1084,7 @@ function renderChinaBirthHistory(
   return buildPage({
     docTitle: "中国投胎成功历史",
     title: "中国投胎 · 降生纪年",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>一纸命簿，半生浮沉`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>一纸命簿，半生浮沉`,
     seal: "降生",
     body: section(
       "降 生 名 录",
@@ -1124,7 +1176,7 @@ function renderWorldOverview(
   return buildPage({
     docTitle: "世界投胎记录总览",
     title: "世界投胎 · 记录总览",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>七洲之内，已履 ${visited} 洲`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>七洲之内，已履 ${visited} 洲`,
     seal: "寰宇",
     body: [
       section("生 死 之 数", hero),
@@ -1251,7 +1303,7 @@ function renderChinaOverview(
   return buildPage({
     docTitle: "中国投胎记录总览",
     title: "中国投胎 · 记录总览",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>生死有数，去来有痕`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>生死有数，去来有痕`,
     seal: "命簿",
     body: [
       section("生 死 之 数", hero),
@@ -1320,7 +1372,7 @@ function renderFirstAppearance(
   return buildPage({
     docTitle: "中国投胎第一次出现",
     title: "中国投胎 · 初见图鉴",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>已踏足 ${unlocked} / ${totalProvinceCount} 省`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>已踏足 ${unlocked} / ${totalProvinceCount} 省`,
     seal: "初见",
     body: section(
       "初 见 之 序",
@@ -1489,7 +1541,7 @@ myChart.setOption({
   return buildMapPage({
     docTitle: "世界投胎落点",
     title: `${birthResultInWorld.dictContinent} · ${birthResultInWorld.dictName}`,
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>第 ${birthResultInWorld.index} 次轮回 · 已落人间`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>第 ${birthResultInWorld.index} 次轮回 · 已落人间`,
     seal: "寰宇",
     chartHeight: 372,
     legend: `<span class="key"><i></i>本次落点</span>
@@ -1583,7 +1635,7 @@ myChart.setOption({
   return buildMapPage({
     docTitle: "中国投胎落点",
     title: detail,
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>第 ${birthResult.index} 次轮回 · 已落人间`,
+    subtitle: `命主 ${esc(trimUsername(username))}<span class="sep">❖</span>第 ${birthResult.index} 次轮回 · 已落人间`,
     seal: "降生",
     chartHeight: 590,
     legend: `<span class="key"><i></i>本次落点</span>
