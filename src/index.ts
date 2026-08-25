@@ -2952,8 +2952,13 @@ export function apply(ctx: Context, config: Config) {
       .transform(newPlayerName, { text: true, default: false })
       .trim();
 
-    const users = await ctx.database.get("user", {});
-    if (users.some((user) => user.name === newPlayerName)) {
+    // 只查有没有同名的一行，不必把整张 user 表读进内存
+    const [taken] = await ctx.database.get(
+      "user",
+      { name: newPlayerName },
+      ["id"],
+    );
+    if (taken) {
       return sendMessage(session, `✍ 此名号已被他人占去，请另择一个。`, `改名`);
     }
 
@@ -2981,8 +2986,12 @@ export function apply(ctx: Context, config: Config) {
   }
 
   async function handleCustomUsername(ctx, session, userId, newPlayerName) {
-    const players = await ctx.database.get("toutai_records", {});
-    if (players.some((player) => player.username === newPlayerName)) {
+    const [taken] = await ctx.database.get(
+      "toutai_records",
+      { username: newPlayerName },
+      ["userId"],
+    );
+    if (taken) {
       return sendMessage(
         session,
         `✍ 此名号已被他人占去，请另择一个。`,
@@ -3851,8 +3860,10 @@ export function apply(ctx: Context, config: Config) {
 
     if (sentMessages.length > 1) {
       const oldestMessageId = sentMessages.shift();
-      setTimeout(async () => {
-        await bot.deleteMessage(channelId, oldestMessageId);
+      ctx.setTimeout(() => {
+        bot.deleteMessage(channelId, oldestMessageId).catch((error) => {
+          logger.debug("撤回消息失败：%s", error.message);
+        });
       }, config.retractDelay * 1000);
     }
   }
