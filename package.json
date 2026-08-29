@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-toutai",
   "description": "Koishi 的投胎模拟器插件。投胎到中国或世界各地。",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

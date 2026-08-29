@@ -1616,8 +1616,6 @@ export function apply(ctx: Context, config: Config) {
     },
   );
 
-  const filePath = path.join(__dirname, "emptyHtml.html").replace(/\\/g, "/");
-  const pageGotoFilePath = "file://" + filePath;
   const ChinaJsonFilePath = path.join(__dirname, "assets", "China.json");
   const worldJsonFilePath = path.join(__dirname, "assets", "world.json");
   const worldDataJsonFilePath = path.join(
@@ -3077,34 +3075,27 @@ export function apply(ctx: Context, config: Config) {
     };
   }
 
-  /** 统一的截图流程：等宽画布、二倍图、按内容高度裁切。 */
-  async function capture(
-    htmlContent: string,
-    options: { width?: number; height?: number; fullPage?: boolean } = {},
-  ): Promise<Buffer> {
-    const width = options.width ?? CARD_WIDTH;
-    const browser = ctx.puppeteer.browser;
-    const browserContext = await browser.createBrowserContext();
-    const page = await browserContext.newPage();
+  /** 统一的截图流程：走 Koishi 的 `page()`，等宽画布、二倍图、截 body。 */
+  async function capture(htmlContent: string): Promise<Buffer> {
+    const page = await ctx.puppeteer.page();
     try {
       await page.setViewport({
-        width,
-        height: options.height ?? 800,
+        width: CARD_WIDTH,
+        height: 800,
         deviceScaleFactor: 2,
       });
-      await page.goto(pageGotoFilePath);
-      await page.setContent(h.unescape(htmlContent), { waitUntil: "load" });
-      if (options.fullPage) {
-        return await page.screenshot({ type: config.imageType, fullPage: true });
-      }
-      const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
-      return await page.screenshot({
-        type: config.imageType,
-        clip: { x: 0, y: 0, width, height: bodyHeight },
+      await page.setContent(h.unescape(htmlContent), {
+        waitUntil: "load",
+        timeout: 30000,
       });
+      await page.evaluate(async () => {
+        await (document as any).fonts?.ready;
+      });
+      const body = await page.$("body");
+      if (!body) throw new Error("截图失败：页面 body 不存在");
+      return await body.screenshot({ type: config.imageType });
     } finally {
       await page.close();
-      await browserContext.close();
     }
   }
 
