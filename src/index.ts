@@ -1945,8 +1945,8 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return await sendMessage(
           session,
-          `📜 中国投胎记录 · 可查条目
-　请择一类查阅：`,
+          `📋 中国投胎记录 · 可查条目
+　请选择一类查阅：`,
           `中国投胎记录总览 中国投胎成功历史 中国投胎地区分布 中国投胎性别分布 中国投胎第一次出现记录`,
           2,
         );
@@ -1976,7 +1976,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📜 命簿翻遍，未见此人的中国投胎记录。`,
+          `⚠️ 未找到此人的中国投胎记录。`,
           `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
           2,
         );
@@ -2052,7 +2052,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📜 命簿翻遍，未见此人的中国投胎记录。`,
+          `⚠️ 未找到此人的中国投胎记录。`,
           `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
           2,
         );
@@ -2111,7 +2111,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📜 命簿翻遍，未见此人的中国投胎记录。`,
+          `⚠️ 未找到此人的中国投胎记录。`,
           `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
           2,
         );
@@ -2168,7 +2168,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📜 命簿翻遍，未见此人的中国投胎记录。`,
+          `⚠️ 未找到此人的中国投胎记录。`,
           `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
           2,
         );
@@ -2225,7 +2225,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📜 命簿翻遍，未见此人的中国投胎记录。`,
+          `⚠️ 未找到此人的中国投胎记录。`,
           `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
           2,
         );
@@ -2269,8 +2269,8 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return await sendMessage(
           session,
-          `📜 世界投胎记录 · 可查条目
-　请择一类查阅：`,
+          `📋 世界投胎记录 · 可查条目
+　请选择一类查阅：`,
           `世界投胎成功历史 世界投胎夭折历史 世界投胎记录总览`,
           2,
         );
@@ -2300,7 +2300,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📜 命簿翻遍，未见此人的世界投胎记录。`,
+          `⚠️ 未找到此人的世界投胎记录。`,
           `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
           2,
         );
@@ -2371,7 +2371,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📜 命簿翻遍，未见此人的世界投胎记录。`,
+          `⚠️ 未找到此人的世界投胎记录。`,
           `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
           2,
         );
@@ -2430,7 +2430,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📜 命簿翻遍，未见此人的世界夭折记录 —— 也算一桩幸事。`,
+          `⚠️ 未找到此人的世界夭折记录。`,
           `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
           2,
         );
@@ -2501,7 +2501,7 @@ export function apply(ctx: Context, config: Config) {
           isNaN(maxLeaderboardDisplayCount) ||
           maxLeaderboardDisplayCount < 0
         ) {
-          return "📜 榜单人数须是不小于 0 的数字，请重新输入。";
+          return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
         }
         let { userId, username } = session;
         username = await getSessionUserName(session);
@@ -2562,7 +2562,7 @@ export function apply(ctx: Context, config: Config) {
           isNaN(maxLeaderboardDisplayCount) ||
           maxLeaderboardDisplayCount < 0
         ) {
-          return "📜 榜单人数须是不小于 0 的数字，请重新输入。";
+          return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
         }
         let { userId, username } = session;
         username = await getSessionUserName(session);
@@ -2625,7 +2625,7 @@ export function apply(ctx: Context, config: Config) {
             isNaN(maxLeaderboardDisplayCount) ||
             maxLeaderboardDisplayCount < 0
           ) {
-            return "📜 榜单人数须是不小于 0 的数字，请重新输入。";
+            return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
           }
           let { userId, username } = session;
           username = await getSessionUserName(session);
@@ -2709,7 +2709,7 @@ export function apply(ctx: Context, config: Config) {
           isNaN(maxLeaderboardDisplayCount) ||
           maxLeaderboardDisplayCount < 0
         ) {
-          return "📜 榜单人数须是不小于 0 的数字，请重新输入。";
+          return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
         }
         let { userId, username } = session;
         username = await getSessionUserName(session);
@@ -2770,7 +2770,7 @@ export function apply(ctx: Context, config: Config) {
           isNaN(maxLeaderboardDisplayCount) ||
           maxLeaderboardDisplayCount < 0
         ) {
-          return "📜 榜单人数须是不小于 0 的数字，请重新输入。";
+          return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
         }
         let { userId, username } = session;
         username = await getSessionUserName(session);
@@ -2841,7 +2841,7 @@ export function apply(ctx: Context, config: Config) {
             isNaN(maxLeaderboardDisplayCount) ||
             maxLeaderboardDisplayCount < 0
           ) {
-            return "📜 榜单人数须是不小于 0 的数字，请重新输入。";
+            return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
           }
           let { userId, username } = session;
           username = await getSessionUserName(session);
@@ -2902,7 +2902,7 @@ export function apply(ctx: Context, config: Config) {
       if (!newPlayerName) {
         return sendMessage(
           session,
-          `✍ 请写下新的名号。`,
+          `⚠️ 请输入新的名号。`,
           `投胎中国 投胎世界 改名`,
         );
       }
@@ -2917,7 +2917,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `✍ 并非 QQ 官方机器人，无需改名。`,
+          `⚠️ 不是 QQ 官方机器人，无需改名。`,
           `改名`,
         );
       }
@@ -2925,7 +2925,7 @@ export function apply(ctx: Context, config: Config) {
       if (newPlayerName.length > 20) {
         return sendMessage(
           session,
-          `✍ 名号过长（至多 20 字），请另择一个。`,
+          `⚠️ 名号过长（至多 20 字），请换一个。`,
           `投胎中国 投胎世界 改名`,
         );
       }
@@ -2933,7 +2933,7 @@ export function apply(ctx: Context, config: Config) {
       if (newPlayerName.includes("@everyone")) {
         return sendMessage(
           session,
-          `✍ 此名号不合规矩，请另择一个。`,
+          `⚠️ 此名号不合规矩，请换一个。`,
           `投胎中国 投胎世界 改名`,
         );
       }
@@ -2957,7 +2957,7 @@ export function apply(ctx: Context, config: Config) {
       ["id"],
     );
     if (taken) {
-      return sendMessage(session, `✍ 此名号已被他人占去，请另择一个。`, `改名`);
+      return sendMessage(session, `⚠️ 此名号已被他人占用，请换一个。`, `改名`);
     }
 
     try {
@@ -2965,7 +2965,7 @@ export function apply(ctx: Context, config: Config) {
       await session.user.$update();
       return sendMessage(
         session,
-        `✍ 名号已改 ——「${newPlayerName}」`,
+        `✅ 名号已改为「${newPlayerName}」。`,
         `查询玩家记录 开始游戏 改名`,
         2,
       );
@@ -2973,12 +2973,12 @@ export function apply(ctx: Context, config: Config) {
       if (RuntimeError.check(error, "duplicate-entry")) {
         return sendMessage(
           session,
-          `✍ 此名号已被他人占去，请另择一个。`,
+          `⚠️ 此名号已被他人占用，请换一个。`,
           `改名`,
         );
       } else {
         logger.warn(error);
-        return sendMessage(session, `✍ 名号更改失败，请稍后再试。`, `改名`);
+        return sendMessage(session, `❌ 名号更改失败，请稍后再试。`, `改名`);
       }
     }
   }
@@ -2992,7 +2992,7 @@ export function apply(ctx: Context, config: Config) {
     if (taken) {
       return sendMessage(
         session,
-        `✍ 此名号已被他人占去，请另择一个。`,
+        `⚠️ 此名号已被他人占用，请换一个。`,
         `投胎中国 投胎世界 改名`,
       );
     }
@@ -3012,7 +3012,7 @@ export function apply(ctx: Context, config: Config) {
     }
     return await sendMessage(
       session,
-      `✍ 名号已改 ——「${newPlayerName}」`,
+      `✅ 名号已改为「${newPlayerName}」。`,
       `投胎中国 投胎世界 改名`,
       2,
     );
