@@ -1,4 +1,4 @@
-import { Context, h, RuntimeError, Schema } from "koishi";
+import { Context, h, Schema } from "koishi";
 import {} from "koishi-plugin-markdown-to-image-service";
 import {} from "koishi-plugin-puppeteer";
 import * as path from "path";
@@ -33,12 +33,6 @@ export interface Config {
   isMapImageIncludedAfterRebirth: boolean;
   imageType: "png" | "jpeg" | "webp";
   isTextToImageConversionEnabled: boolean;
-  isEnableQQOfficialRobotMarkdownTemplate: boolean;
-
-  customTemplateId: string;
-  key: string;
-  numberOfMessageButtonsPerRow: number;
-  isUsingUnifiedKoishiBuiltInUsername: boolean;
 }
 
 export const Config: Schema<Config> = Schema.intersect([
@@ -71,32 +65,7 @@ export const Config: Schema<Config> = Schema.intersect([
       .description(
         `是否开启将文本转为图片的功能（可选），如需启用，需要启用 \`markdownToImage\` 服务。`,
       ),
-    isEnableQQOfficialRobotMarkdownTemplate: Schema.boolean()
-      .default(false)
-      .description(`是否启用 QQ 官方机器人的 Markdown 模板，带消息按钮。`),
   }),
-  Schema.union([
-    Schema.object({
-      isEnableQQOfficialRobotMarkdownTemplate: Schema.const(true).required(),
-      customTemplateId: Schema.string()
-        .default("")
-        .description(`自定义模板 ID。`),
-      key: Schema.string()
-        .default("")
-        .description(
-          `文本内容中特定插值的 key，用于存放文本。如果你的插值为 {{.info}}，那么请在这里填 info。`,
-        ),
-      numberOfMessageButtonsPerRow: Schema.number()
-        .min(2)
-        .max(5)
-        .default(2)
-        .description(`每行消息按钮的数量。`),
-      isUsingUnifiedKoishiBuiltInUsername: Schema.boolean()
-        .default(true)
-        .description(`是否使用统一的 Koishi 内置用户名。`),
-    }),
-    Schema.object({}),
-  ]),
 ]) as any;
 
 declare module "koishi" {
@@ -1665,10 +1634,6 @@ export function apply(ctx: Context, config: Config) {
   ).length;
 
   const logger = ctx.logger("toutai");
-  const isQQOfficialRobotMarkdownTemplateEnabled =
-    config.isEnableQQOfficialRobotMarkdownTemplate &&
-    config.key !== "" &&
-    config.customTemplateId !== "";
   const macauBirthPopulation = 3712;
   const taiwanBirthPopulation = 137413;
   const hongKongBirthPopulation = 33200;
@@ -1689,17 +1654,6 @@ export function apply(ctx: Context, config: Config) {
   };
 
   ctx.command("toutai", "投胎模拟器帮助").action(async ({ session }) => {
-    if (isQQOfficialRobotMarkdownTemplateEnabled && session.platform === "qq") {
-      return await sendMessage(
-        session,
-        `❖ 投 胎 模 拟 器 ❖
-一念既起，山河万里。
-请择一处人间，投身而去。`,
-        `投胎中国排行榜 投胎世界排行榜 中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
-        false,
-      );
-    }
     await session.execute(`toutai -h`);
   });
 
@@ -1719,8 +1673,6 @@ export function apply(ctx: Context, config: Config) {
           session,
           `⏳ 轮回未启
 　黄泉路上尚在排队，请再候 ${remainingWaitTime} 秒。`,
-          `投胎中国 投胎世界 改名`,
-          2,
         );
       }
     }
@@ -1741,8 +1693,6 @@ export function apply(ctx: Context, config: Config) {
         `🕯 第 ${attempts} 次叩门 · 未能落地
 　${pickOne(LAMENTS)}
 　累计夭折 ${stillbirths} 次，再来一次吧。`,
-        `投胎中国 投胎世界 改名`,
-        2,
       );
     } else {
       const birthResult = simulateBirthInChina();
@@ -1792,26 +1742,7 @@ export function apply(ctx: Context, config: Config) {
       const hImg = config.isMapImageIncludedAfterRebirth
         ? `${h.image(mapBuffer, `image/${config.imageType}`)}\n`
         : ``;
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          message,
-          `投胎中国排行榜 投胎世界排行榜 中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-        );
-      } else {
-        await sendMessage(
-          session,
-          `${hImg}${message}`,
-          `投胎中国排行榜 投胎世界排行榜 中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-        );
-      }
+      await sendMessage(session, `${hImg}${message}`);
     }
   });
 
@@ -1831,7 +1762,6 @@ export function apply(ctx: Context, config: Config) {
           session,
           `⏳ 轮回未启
 　黄泉路上尚在排队，请再候 ${remainingWaitTime} 秒。`,
-          `投胎中国 投胎世界 改名`,
         );
       }
     }
@@ -1873,7 +1803,6 @@ export function apply(ctx: Context, config: Config) {
         `🕯 投身于 ${dictContinent} · ${dictName}
 　${pickOne(LAMENTS)}
 　累计夭折 ${stillbirths} 次，再来一次吧。`,
-        `投胎中国 投胎世界 改名`,
       );
     }
     const birthResultInWorld = {
@@ -1913,44 +1842,12 @@ export function apply(ctx: Context, config: Config) {
       entry("国度", dictName),
       `　${pickOne(BLESSINGS)}`,
     ].join("\n");
-    if (
-      !config.isTextToImageConversionEnabled &&
-      isQQOfficialRobotMarkdownTemplateEnabled &&
-      session.platform === "qq"
-    ) {
-      await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-      return await sendMessage(
-        session,
-        message,
-        `投胎中国排行榜 投胎世界排行榜 中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
-      );
-    } else {
-      await sendMessage(
-        session,
-        `${hImg}${message}`,
-        `投胎中国排行榜 投胎世界排行榜 中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
-      );
-    }
+    await sendMessage(session, `${hImg}${message}`);
   });
 
   ctx
     .command("toutai.中国投胎记录", "中国投胎记录帮助")
     .action(async ({ session }, startIndex) => {
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        return await sendMessage(
-          session,
-          `📋 中国投胎记录 · 可查条目
-　请选择一类查阅：`,
-          `中国投胎记录总览 中国投胎成功历史 中国投胎地区分布 中国投胎性别分布 中国投胎第一次出现记录`,
-          2,
-        );
-      }
       await session.execute(`toutai.中国投胎记录 -h`);
     });
 
@@ -1977,8 +1874,6 @@ export function apply(ctx: Context, config: Config) {
         return sendMessage(
           session,
           `⚠️ 未找到此人的中国投胎记录。`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
         );
       }
 
@@ -2006,25 +1901,10 @@ export function apply(ctx: Context, config: Config) {
         numberOfStillbirthsInChina,
       );
       const hImg = h.image(buffer, `image/${config.imageType}`);
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          `<@${userId}>`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-          false,
-        );
-      }
+      
       await sendMessage(
         session,
         hImg,
-        `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
         false,
       );
     });
@@ -2053,8 +1933,6 @@ export function apply(ctx: Context, config: Config) {
         return sendMessage(
           session,
           `⚠️ 未找到此人的中国投胎记录。`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -2065,25 +1943,10 @@ export function apply(ctx: Context, config: Config) {
         last20Records,
       );
       const hImg = h.image(buffer, `image/${config.imageType}`);
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          `<@${userId}>`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-          false,
-        );
-      }
+      
       await sendMessage(
         session,
         hImg,
-        `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
         false,
       );
     });
@@ -2112,8 +1975,6 @@ export function apply(ctx: Context, config: Config) {
         return sendMessage(
           session,
           `⚠️ 未找到此人的中国投胎记录。`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -2122,25 +1983,10 @@ export function apply(ctx: Context, config: Config) {
         birthResultsInChina,
       );
       const hImg = h.image(buffer, `image/${config.imageType}`);
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          `<@${userId}>`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-          false,
-        );
-      }
+      
       await sendMessage(
         session,
         hImg,
-        `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
         false,
       );
     });
@@ -2169,8 +2015,6 @@ export function apply(ctx: Context, config: Config) {
         return sendMessage(
           session,
           `⚠️ 未找到此人的中国投胎记录。`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -2179,25 +2023,10 @@ export function apply(ctx: Context, config: Config) {
         birthResultsInChina,
       );
       const hImg = h.image(buffer, `image/${config.imageType}`);
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          `<@${userId}>`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-          false,
-        );
-      }
+      
       await sendMessage(
         session,
         hImg,
-        `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
         false,
       );
     });
@@ -2226,8 +2055,6 @@ export function apply(ctx: Context, config: Config) {
         return sendMessage(
           session,
           `⚠️ 未找到此人的中国投胎记录。`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -2236,25 +2063,10 @@ export function apply(ctx: Context, config: Config) {
         birthResultsInChina,
       );
       const hImg = h.image(buffer, `image/${config.imageType}`);
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          `<@${userId}>`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-          false,
-        );
-      }
+      
       await sendMessage(
         session,
         hImg,
-        `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
         false,
       );
     });
@@ -2262,19 +2074,6 @@ export function apply(ctx: Context, config: Config) {
   ctx
     .command("toutai.世界投胎记录", "世界投胎记录帮助")
     .action(async ({ session }, startIndex) => {
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        return await sendMessage(
-          session,
-          `📋 世界投胎记录 · 可查条目
-　请选择一类查阅：`,
-          `世界投胎成功历史 世界投胎夭折历史 世界投胎记录总览`,
-          2,
-        );
-      }
       await session.execute(`toutai.世界投胎记录 -h`);
     });
 
@@ -2301,8 +2100,6 @@ export function apply(ctx: Context, config: Config) {
         return sendMessage(
           session,
           `⚠️ 未找到此人的世界投胎记录。`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
         );
       }
 
@@ -2325,25 +2122,10 @@ export function apply(ctx: Context, config: Config) {
         numberOfStillbirthsInWorld,
       );
       const hImg = h.image(buffer, `image/${config.imageType}`);
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          `<@${userId}>`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-          false,
-        );
-      }
+      
       await sendMessage(
         session,
         hImg,
-        `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
         false,
       );
     });
@@ -2372,8 +2154,6 @@ export function apply(ctx: Context, config: Config) {
         return sendMessage(
           session,
           `⚠️ 未找到此人的世界投胎记录。`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
         );
       }
       const { birthResultsInWorld } = targetUserRecord[0];
@@ -2384,25 +2164,10 @@ export function apply(ctx: Context, config: Config) {
         last20Records,
       );
       const hImg = h.image(buffer, `image/${config.imageType}`);
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          `<@${userId}>`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-          false,
-        );
-      }
+      
       await sendMessage(
         session,
         hImg,
-        `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
         false,
       );
     });
@@ -2431,8 +2196,6 @@ export function apply(ctx: Context, config: Config) {
         return sendMessage(
           session,
           `⚠️ 未找到此人的世界夭折记录。`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
         );
       }
       const { unfortunateDemiseRecordsInWorld } = targetUserRecord[0];
@@ -2444,25 +2207,10 @@ export function apply(ctx: Context, config: Config) {
           last20Records,
         );
       const hImg = h.image(buffer, `image/${config.imageType}`);
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-        return await sendMessage(
-          session,
-          `<@${userId}>`,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
-          false,
-        );
-      }
+      
       await sendMessage(
         session,
         hImg,
-        `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-        2,
         false,
       );
     });
@@ -2470,19 +2218,6 @@ export function apply(ctx: Context, config: Config) {
   ctx
     .command("toutai.中国投胎排行榜", "中国投胎排行榜帮助")
     .action(async ({ session }, startIndex) => {
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        return await sendMessage(
-          session,
-          `🏆 中国投胎排行榜 · 可阅榜单
-　请择一榜观之：`,
-          `中国投胎成功次数 中国投胎夭折次数 中国投胎男孩次数 中国投胎女孩次数`,
-          2,
-        );
-      }
       await session.execute(`toutai.中国投胎排行榜 -h`);
     });
 
@@ -2523,25 +2258,10 @@ export function apply(ctx: Context, config: Config) {
           },
         );
         const hImg = h.image(buffer, `image/${config.imageType}`);
-        if (
-          !config.isTextToImageConversionEnabled &&
-          isQQOfficialRobotMarkdownTemplateEnabled &&
-          session.platform === "qq"
-        ) {
-          await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-          return await sendMessage(
-            session,
-            `<@${userId}>`,
-            `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-            2,
-            false,
-          );
-        }
+        
         await sendMessage(
           session,
           hImg,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
           false,
         );
       },
@@ -2584,25 +2304,10 @@ export function apply(ctx: Context, config: Config) {
           },
         );
         const hImg = h.image(buffer, `image/${config.imageType}`);
-        if (
-          !config.isTextToImageConversionEnabled &&
-          isQQOfficialRobotMarkdownTemplateEnabled &&
-          session.platform === "qq"
-        ) {
-          await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-          return await sendMessage(
-            session,
-            `<@${userId}>`,
-            `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-            2,
-            false,
-          );
-        }
+        
         await sendMessage(
           session,
           hImg,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
           false,
         );
       },
@@ -2650,25 +2355,10 @@ export function apply(ctx: Context, config: Config) {
             },
           );
           const hImg = h.image(buffer, `image/${config.imageType}`);
-          if (
-            !config.isTextToImageConversionEnabled &&
-            isQQOfficialRobotMarkdownTemplateEnabled &&
-            session.platform === "qq"
-          ) {
-            await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-            return await sendMessage(
-              session,
-              `<@${userId}>`,
-              `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-              2,
-              false,
-            );
-          }
+          
           await sendMessage(
             session,
             hImg,
-            `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-            2,
             false,
           );
         },
@@ -2678,19 +2368,6 @@ export function apply(ctx: Context, config: Config) {
   ctx
     .command("toutai.世界投胎排行榜", "世界投胎排行榜帮助")
     .action(async ({ session }, startIndex) => {
-      if (
-        !config.isTextToImageConversionEnabled &&
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
-        return await sendMessage(
-          session,
-          `🏆 世界投胎排行榜 · 可阅榜单
-　请择一榜观之：`,
-          `世界投胎成功次数 世界投胎夭折次数 世界投胎亚洲次数 世界投胎欧洲次数 世界投胎南美洲次数 世界投胎南极洲次数 世界投胎大洋洲次数 世界投胎北美洲次数 世界投胎非洲次数`,
-          2,
-        );
-      }
       await session.execute(`toutai.世界投胎排行榜 -h`);
     });
 
@@ -2731,25 +2408,10 @@ export function apply(ctx: Context, config: Config) {
           },
         );
         const hImg = h.image(buffer, `image/${config.imageType}`);
-        if (
-          !config.isTextToImageConversionEnabled &&
-          isQQOfficialRobotMarkdownTemplateEnabled &&
-          session.platform === "qq"
-        ) {
-          await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-          return await sendMessage(
-            session,
-            `<@${userId}>`,
-            `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-            2,
-            false,
-          );
-        }
+        
         await sendMessage(
           session,
           hImg,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
           false,
         );
       },
@@ -2792,25 +2454,10 @@ export function apply(ctx: Context, config: Config) {
           },
         );
         const hImg = h.image(buffer, `image/${config.imageType}`);
-        if (
-          !config.isTextToImageConversionEnabled &&
-          isQQOfficialRobotMarkdownTemplateEnabled &&
-          session.platform === "qq"
-        ) {
-          await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-          return await sendMessage(
-            session,
-            `<@${userId}>`,
-            `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-            2,
-            false,
-          );
-        }
+        
         await sendMessage(
           session,
           hImg,
-          `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-          2,
           false,
         );
       },
@@ -2866,157 +2513,15 @@ export function apply(ctx: Context, config: Config) {
             },
           );
           const hImg = h.image(buffer, `image/${config.imageType}`);
-          if (
-            !config.isTextToImageConversionEnabled &&
-            isQQOfficialRobotMarkdownTemplateEnabled &&
-            session.platform === "qq"
-          ) {
-            await sendMessage(session, hImg, `投胎中国 投胎世界`, 2, false);
-            return await sendMessage(
-              session,
-              `<@${userId}>`,
-              `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-              2,
-              false,
-            );
-          }
+          
           await sendMessage(
             session,
             hImg,
-            `中国投胎记录 世界投胎记录 投胎中国 投胎世界 改名`,
-            2,
             false,
           );
         },
       );
   });
-
-  ctx
-    .command("toutai.改名 [newPlayerName:text]", "更改玩家名字")
-    .action(async ({ session }, newPlayerName) => {
-      const { userId, user } = session;
-      const username = await getSessionUserName(session);
-      await updateNameInPlayerRecord(session, userId, username);
-
-      newPlayerName = newPlayerName?.trim();
-      if (!newPlayerName) {
-        return sendMessage(
-          session,
-          `⚠️ 请输入新的名号。`,
-          `投胎中国 投胎世界 改名`,
-        );
-      }
-
-      if (
-        !(
-          config.isEnableQQOfficialRobotMarkdownTemplate &&
-          session.platform === "qq" &&
-          config.key &&
-          config.customTemplateId
-        )
-      ) {
-        return sendMessage(
-          session,
-          `⚠️ 不是 QQ 官方机器人，无需改名。`,
-          `改名`,
-        );
-      }
-
-      if (newPlayerName.length > 20) {
-        return sendMessage(
-          session,
-          `⚠️ 名号过长（至多 20 字），请换一个。`,
-          `投胎中国 投胎世界 改名`,
-        );
-      }
-
-      if (newPlayerName.includes("@everyone")) {
-        return sendMessage(
-          session,
-          `⚠️ 此名号不合规矩，请换一个。`,
-          `投胎中国 投胎世界 改名`,
-        );
-      }
-
-      if (config.isUsingUnifiedKoishiBuiltInUsername) {
-        return handleUnifiedKoishiUsername(session, newPlayerName);
-      } else {
-        return handleCustomUsername(ctx, session, userId, newPlayerName);
-      }
-    });
-
-  async function handleUnifiedKoishiUsername(session, newPlayerName) {
-    newPlayerName = h
-      .transform(newPlayerName, { text: true, default: false })
-      .trim();
-
-    // 只查有没有同名的一行，不必把整张 user 表读进内存
-    const [taken] = await ctx.database.get(
-      "user",
-      { name: newPlayerName },
-      ["id"],
-    );
-    if (taken) {
-      return sendMessage(session, `⚠️ 此名号已被他人占用，请换一个。`, `改名`);
-    }
-
-    try {
-      session.user.name = newPlayerName;
-      await session.user.$update();
-      return sendMessage(
-        session,
-        `✅ 名号已改为「${newPlayerName}」。`,
-        `查询玩家记录 开始游戏 改名`,
-        2,
-      );
-    } catch (error) {
-      if (RuntimeError.check(error, "duplicate-entry")) {
-        return sendMessage(
-          session,
-          `⚠️ 此名号已被他人占用，请换一个。`,
-          `改名`,
-        );
-      } else {
-        logger.warn(error);
-        return sendMessage(session, `❌ 名号更改失败，请稍后再试。`, `改名`);
-      }
-    }
-  }
-
-  async function handleCustomUsername(ctx, session, userId, newPlayerName) {
-    const [taken] = await ctx.database.get(
-      "toutai_records",
-      { username: newPlayerName },
-      ["userId"],
-    );
-    if (taken) {
-      return sendMessage(
-        session,
-        `⚠️ 此名号已被他人占用，请换一个。`,
-        `投胎中国 投胎世界 改名`,
-      );
-    }
-
-    const userRecord = await ctx.database.get("toutai_records", { userId });
-    if (userRecord.length === 0) {
-      await ctx.database.create("toutai_records", {
-        userId,
-        username: newPlayerName,
-      });
-    } else {
-      await ctx.database.set(
-        "toutai_records",
-        { userId },
-        { username: newPlayerName },
-      );
-    }
-    return await sendMessage(
-      session,
-      `✅ 名号已改为「${newPlayerName}」。`,
-      `投胎中国 投胎世界 改名`,
-      2,
-    );
-  }
 
   function simulateRebirthInWorld(
     worldData: WorldBirthrateData[],
@@ -3243,45 +2748,25 @@ export function apply(ctx: Context, config: Config) {
     } else {
       targetUser = await replaceAtTags(session, targetUser);
 
-      if (
-        isQQOfficialRobotMarkdownTemplateEnabled &&
-        session.platform === "qq"
-      ) {
+      const userIdRegex = /<at id="([^"]+)"(?: name="([^"]+)")?\/>/;
+      const match = targetUser.match(userIdRegex);
+      targetUserId = match?.[1] ?? userId;
+      targetUsername = match?.[2] ?? username;
+
+      if (targetUserId === userId) {
         targetUserRecord = await ctx.database.get("toutai_records", {
-          username: targetUser,
+          userId: targetUser,
         });
 
-        if (targetUserRecord.length === 0) {
-          targetUserRecord = await ctx.database.get("toutai_records", {
-            userId: targetUser,
-          });
-
-          if (targetUserRecord.length !== 0) {
-            targetUserId = targetUser;
-          }
-        } else {
-          targetUserId = targetUserRecord[0].userId;
+        if (targetUserRecord.length !== 0) {
+          targetUserId = targetUser;
         }
       } else {
-        const userIdRegex = /<at id="([^"]+)"(?: name="([^"]+)")?\/>/;
-        const match = targetUser.match(userIdRegex);
-        targetUserId = match?.[1] ?? userId;
-        targetUsername = match?.[2] ?? username;
-
-        if (targetUserId === userId) {
-          targetUserRecord = await ctx.database.get("toutai_records", {
-            userId: targetUser,
-          });
-
-          if (targetUserRecord.length !== 0) {
-            targetUserId = targetUser;
-          }
-        } else {
-          targetUserRecord = await ctx.database.get("toutai_records", {
-            userId: targetUserId,
-          });
-        }
+        targetUserRecord = await ctx.database.get("toutai_records", {
+          userId: targetUserId,
+        });
       }
+
     }
 
     return { targetUserRecord, targetUserId };
@@ -3501,15 +2986,7 @@ export function apply(ctx: Context, config: Config) {
     const existingRecord = userRecord[0];
     let isChange = false;
 
-    if (
-      username !== existingRecord.username &&
-      (!(
-        isQQOfficialRobotMarkdownTemplateEnabled && session.platform === "qq"
-      ) ||
-        (isQQOfficialRobotMarkdownTemplateEnabled &&
-          session.platform === "qq" &&
-          config.isUsingUnifiedKoishiBuiltInUsername))
-    ) {
+    if (username !== existingRecord.username) {
       existingRecord.username = username;
       isChange = true;
     }
@@ -3526,32 +3003,7 @@ export function apply(ctx: Context, config: Config) {
   }
 
   async function getSessionUserName(session: any): Promise<string> {
-    let sessionUserName = session.username;
-
-    if (isQQOfficialRobotMarkdownTemplateEnabled && session.platform === "qq") {
-      const [user] = await ctx.database.get("user", { id: session.user.id });
-      if (config.isUsingUnifiedKoishiBuiltInUsername && user.name) {
-        sessionUserName = user.name;
-      } else {
-        let userRecord = await ctx.database.get("toutai_records", {
-          userId: session.userId,
-        });
-
-        if (userRecord.length === 0) {
-          await ctx.database.create("toutai_records", {
-            userId: session.userId,
-            username: sessionUserName,
-          });
-
-          userRecord = await ctx.database.get("toutai_records", {
-            userId: session.userId,
-          });
-        }
-        sessionUserName = userRecord[0].username;
-      }
-    }
-
-    return sessionUserName;
+    return session.username;
   }
 
   function isSpecialProvince(province: string): boolean {
@@ -3618,236 +3070,47 @@ export function apply(ctx: Context, config: Config) {
     };
   }
 
-  function parseMarkdownCommands(markdownCommands: string): string[] {
-    return markdownCommands
-      .split(" ")
-      .filter((command) => command.trim() !== "");
-  }
-
-  async function createButtons(session: any, markdownCommands: string) {
-    const commands = parseMarkdownCommands(markdownCommands);
-
-    const mapCommandToDataValue = (command: string) => {
-      const commandMappings: Record<string, string> = {
-        投胎中国: "toutai.投胎中国",
-        投胎世界: "toutai.投胎世界",
-        改名: "toutai.改名",
-        中国投胎记录: "toutai.中国投胎记录",
-        中国投胎成功历史: "toutai.中国投胎记录.成功历史",
-        中国投胎地区分布: "toutai.中国投胎记录.地区分布",
-        中国投胎性别分布: "toutai.中国投胎记录.性别分布",
-        中国投胎第一次出现记录: "toutai.中国投胎记录.第一次出现",
-        中国投胎记录总览: "toutai.中国投胎记录.总览",
-        世界投胎记录: "toutai.世界投胎记录",
-        世界投胎成功历史: "toutai.世界投胎记录.成功历史",
-        世界投胎夭折历史: "toutai.世界投胎记录.夭折历史",
-        世界投胎记录总览: "toutai.世界投胎记录.总览",
-        投胎中国排行榜: "toutai.中国投胎排行榜",
-        中国投胎成功次数: "toutai.中国投胎排行榜.成功次数",
-        中国投胎夭折次数: "toutai.中国投胎排行榜.夭折次数",
-        中国投胎男孩次数: "toutai.中国投胎排行榜.男孩次数",
-        中国投胎女孩次数: "toutai.中国投胎排行榜.女孩次数",
-        投胎世界排行榜: "toutai.世界投胎排行榜",
-        世界投胎成功次数: "toutai.世界投胎排行榜.成功次数",
-        世界投胎夭折次数: "toutai.世界投胎排行榜.夭折次数",
-        世界投胎亚洲次数: "toutai.世界投胎排行榜.亚洲",
-        世界投胎欧洲次数: "toutai.世界投胎排行榜.欧洲",
-        世界投胎非洲次数: "toutai.世界投胎排行榜.非洲",
-        世界投胎北美洲次数: "toutai.世界投胎排行榜.北美洲",
-        世界投胎南极洲次数: "toutai.世界投胎排行榜.南极洲",
-        世界投胎大洋洲次数: "toutai.世界投胎排行榜.大洋洲",
-        世界投胎南美洲次数: "toutai.世界投胎排行榜.南美洲",
-      };
-
-      return commandMappings[command];
-    };
-
-    const createButton = async (command: string) => {
-      let dataValue = mapCommandToDataValue(command);
-      if (dataValue === undefined) {
-        dataValue = command;
-      }
-
-      return {
-        render_data: {
-          label: command,
-          visited_label: command,
-          style: 1,
-        },
-        action: {
-          type: 2,
-          permission: { type: 2 },
-          data: `${dataValue}`,
-          enter: !["改名"].includes(command),
-        },
-      };
-    };
-
-    const buttonPromises = commands.map(createButton);
-    return Promise.all(buttonPromises);
-  }
-
   let sentMessages = [];
-  const msgSeqMap: { [msgId: string]: number } = {};
 
   async function sendMessage(
     session: any,
     message: any,
-    markdownCommands: string,
-    numberOfMessageButtonsPerRow?: number,
     isAt: boolean = true,
-    isButton: boolean = false,
   ): Promise<void> {
-    numberOfMessageButtonsPerRow =
-      numberOfMessageButtonsPerRow || config.numberOfMessageButtonsPerRow;
     const { bot, channelId, userId } = session;
     const username = await getSessionUserName(session);
 
     let messageId;
-    let isPushMessageId = false;
-    if (isQQOfficialRobotMarkdownTemplateEnabled && session.platform === "qq") {
-      const msgSeq = msgSeqMap[session.messageId] || 10;
-      msgSeqMap[session.messageId] = msgSeq + 100;
-      const buttons = await createButtons(session, markdownCommands);
-
-      const rows = [];
-      let row = { buttons: [] };
-      buttons.forEach((button, index) => {
-        row.buttons.push(button);
-        if (
-          row.buttons.length === 5 ||
-          index === buttons.length - 1 ||
-          row.buttons.length === numberOfMessageButtonsPerRow
-        ) {
-          rows.push(row);
-          row = { buttons: [] };
-        }
-      });
-
-      if (!isButton && config.isTextToImageConversionEnabled) {
-        const lines = message.toString().split("\n");
-        const isOnlyImgTag =
-          lines.length === 1 && lines[0].trim().startsWith("<img");
-        if (isOnlyImgTag) {
-          [messageId] = await session.send(message);
-        } else {
-          const modifiedMessage = toMarkdownLines(
-            lines,
-            config.shouldPrefixUsernameInMessageSending && isAt
-              ? `@${username}`
-              : undefined,
-          );
-          ctx.inject(["markdownToImage"], async (ctx) => {
-            const imageBuffer =
-              await ctx.markdownToImage.convertToImage(modifiedMessage);
-            [messageId] = await session.send(
-              h.image(imageBuffer, `image/${config.imageType}`),
-            );
-          });
-        }
-        if (config.retractDelay !== 0) {
-          isPushMessageId = true;
-          sentMessages.push(messageId);
-        }
-
-        if (config.isTextToImageConversionEnabled && markdownCommands !== "") {
-          await sendMessage(
-            session,
-            "",
-            markdownCommands,
-            numberOfMessageButtonsPerRow,
-            false,
-            true,
-          );
-        }
-      } else if (isButton && config.isTextToImageConversionEnabled) {
-        const result = await session.qq.sendMessage(session.channelId, {
-          msg_type: 2,
-          msg_id: session.messageId,
-          msg_seq: msgSeq,
-          content: "",
-          markdown: {
-            custom_template_id: config.customTemplateId,
-            params: [
-              {
-                key: config.key,
-                values: [`<@${userId}>`],
-              },
-            ],
-          },
-          keyboard: {
-            content: {
-              rows: rows.slice(0, 5),
-            },
-          },
-        });
-        messageId = result.id;
+    if (config.isTextToImageConversionEnabled) {
+      const lines = message.toString().split("\n");
+      const isOnlyImgTag =
+        lines.length === 1 && lines[0].trim().startsWith("<img");
+      if (isOnlyImgTag) {
+        [messageId] = await session.send(message);
       } else {
-        if (message.attrs?.src || message.includes("<img")) {
-          [messageId] = await session.send(message);
-        } else {
-          message = message.replace(/\n/g, "\r");
-          if (config.shouldPrefixUsernameInMessageSending && isAt) {
-            message = `<@${userId}>\r${message}`;
-          }
-          const result = await session.qq.sendMessage(session.channelId, {
-            msg_type: 2,
-            msg_id: session.messageId,
-            msg_seq: msgSeq,
-            content: "111",
-            markdown: {
-              custom_template_id: config.customTemplateId,
-              params: [
-                {
-                  key: config.key,
-                  values: [`${message}`],
-                },
-              ],
-            },
-            keyboard: {
-              content: {
-                rows: rows.slice(0, 5),
-              },
-            },
-          });
-
-          messageId = result.id;
-        }
+        const modifiedMessage = toMarkdownLines(
+          lines,
+          config.shouldPrefixUsernameInMessageSending && isAt
+            ? `@${username}`
+            : undefined,
+        );
+        ctx.inject(["markdownToImage"], async (ctx) => {
+          const imageBuffer =
+            await ctx.markdownToImage.convertToImage(modifiedMessage);
+          [messageId] = await session.send(
+            h.image(imageBuffer, `image/${config.imageType}`),
+          );
+        });
       }
     } else {
-      if (config.isTextToImageConversionEnabled) {
-        const lines = message.toString().split("\n");
-        const isOnlyImgTag =
-          lines.length === 1 && lines[0].trim().startsWith("<img");
-        if (isOnlyImgTag) {
-          [messageId] = await session.send(message);
-        } else {
-          const modifiedMessage = toMarkdownLines(
-            lines,
-            config.shouldPrefixUsernameInMessageSending && isAt
-              ? `@${username}`
-              : undefined,
-          );
-          ctx.inject(["markdownToImage"], async (ctx) => {
-            const imageBuffer =
-              await ctx.markdownToImage.convertToImage(modifiedMessage);
-            [messageId] = await session.send(
-              h.image(imageBuffer, `image/${config.imageType}`),
-            );
-          });
-        }
-      } else {
-        if (config.shouldPrefixUsernameInMessageSending && isAt) {
-          message = `${h.at(userId)} ~\n${message}`;
-        }
-        [messageId] = await session.send(message);
+      if (config.shouldPrefixUsernameInMessageSending && isAt) {
+        message = `${h.at(userId)} ~\n${message}`;
       }
+      [messageId] = await session.send(message);
     }
 
     if (config.retractDelay === 0) return;
-    if (!isPushMessageId) {
-      sentMessages.push(messageId);
-    }
+    sentMessages.push(messageId);
 
     if (sentMessages.length > 1) {
       const oldestMessageId = sentMessages.shift();
