@@ -9,20 +9,19 @@ export const inject = {
   required: ["database", "puppeteer"],
   optional: ["markdownToImage"],
 };
-export const usage = `一念既起，山河万里。
+export const usage = `## 使用
 
-## 使用
+设置指令别名后，\`toutai.投胎中国\` 或 \`toutai.投胎世界\` 开始模拟。
 
-1. 启动 \`puppeteer\` 服务。
-2. 设置指令别名。
+## 指令
 
-> 记录与榜单的图片以「轮回簿」版式绘制：宣纸底、朱印题头、
-> 青属男 · 绛属女 · 松绿为生 · 朱砂为殁。
-> 落点地图需要联网加载 ECharts。
-
-## QQ 群
-
-- 956758505`;
+| 指令 | 说明 |
+| --- | --- |
+| \`toutai\` | 查看帮助 |
+| \`toutai.投胎中国\` | 投胎到中国 |
+| \`toutai.投胎世界\` | 投胎到世界 |
+| \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 查看记录 |
+| \`toutai.中国投胎排行榜\` / \`toutai.世界投胎排行榜\` | 查看排行榜 |`;
 
 export interface Config {
   defaultMaxDisplayCount: number;
