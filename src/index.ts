@@ -1,5 +1,4 @@
 import { Context, h, Schema } from "koishi";
-import {} from "koishi-plugin-markdown-to-image-service";
 import {} from "koishi-plugin-puppeteer";
 import * as path from "path";
 import * as fs from "fs";
@@ -7,7 +6,6 @@ import * as fs from "fs";
 export let name = "toutai";
 export const inject = {
   required: ["database", "puppeteer"],
-  optional: ["markdownToImage"],
 };
 export const usage = `## 使用
 
@@ -31,7 +29,6 @@ export interface Config {
   retractDelay: number;
   isMapImageIncludedAfterRebirth: boolean;
   imageType: "png" | "jpeg" | "webp";
-  isTextToImageConversionEnabled: boolean;
 }
 
 export const Config: Schema<Config> = Schema.intersect([
@@ -59,11 +56,6 @@ export const Config: Schema<Config> = Schema.intersect([
     imageType: Schema.union(["png", "jpeg", "webp"])
       .default("png")
       .description(`发送的图片类型。`),
-    isTextToImageConversionEnabled: Schema.boolean()
-      .default(false)
-      .description(
-        `是否开启将文本转为图片的功能（可选），如需启用，需要启用 \`markdownToImage\` 服务。`,
-      ),
   }),
 ]) as any;
 
@@ -652,18 +644,6 @@ function pickOne(list: string[]): string {
 /** 「标签　内容」——标签统一两字，字间加全角空格以对齐。 */
 function entry(label: string, value: string): string {
   return `　${[...label].join("　")}　${value}`;
-}
-
-/** 文本转图片时的排版：首行作大字标题，其余作小字正文。 */
-function toMarkdownLines(lines: string[], prefix?: string): string {
-  let hasTitle = false;
-  const body = lines.map((line) => {
-    if (line.trim() === "" || line.includes("<img")) return line + "\n";
-    if (hasTitle) return `### ${line}`;
-    hasTitle = true;
-    return `# ${line}`;
-  });
-  return (prefix ? [`### ${prefix}`, ...body] : body).join("\n");
 }
 
 function medal(rank: number): string {
@@ -3077,36 +3057,12 @@ export function apply(ctx: Context, config: Config) {
     isAt: boolean = true,
   ): Promise<void> {
     const { bot, channelId, userId } = session;
-    const username = await getSessionUserName(session);
 
     let messageId;
-    if (config.isTextToImageConversionEnabled) {
-      const lines = message.toString().split("\n");
-      const isOnlyImgTag =
-        lines.length === 1 && lines[0].trim().startsWith("<img");
-      if (isOnlyImgTag) {
-        [messageId] = await session.send(message);
-      } else {
-        const modifiedMessage = toMarkdownLines(
-          lines,
-          config.shouldPrefixUsernameInMessageSending && isAt
-            ? `@${username}`
-            : undefined,
-        );
-        ctx.inject(["markdownToImage"], async (ctx) => {
-          const imageBuffer =
-            await ctx.markdownToImage.convertToImage(modifiedMessage);
-          [messageId] = await session.send(
-            h.image(imageBuffer, `image/${config.imageType}`),
-          );
-        });
-      }
-    } else {
-      if (config.shouldPrefixUsernameInMessageSending && isAt) {
-        message = `${h.at(userId)} ~\n${message}`;
-      }
-      [messageId] = await session.send(message);
+    if (config.shouldPrefixUsernameInMessageSending && isAt) {
+      message = `${h.at(userId)} ~\n${message}`;
     }
+    [messageId] = await session.send(message);
 
     if (config.retractDelay === 0) return;
     sentMessages.push(messageId);
