@@ -1,42 +1,27 @@
-koishi-plugin-toutai
-====================
+# koishi-plugin-toutai
 
-[<img alt="github" src="https://img.shields.io/badge/github-araea/koishi__plugin__toutai-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/araea/koishi-plugin-toutai)
-[<img alt="npm" src="https://img.shields.io/npm/v/koishi-plugin-toutai.svg?style=for-the-badge&color=fc8d62&logo=npm" height="20">](https://www.npmjs.com/package/koishi-plugin-toutai)
+投胎模拟器插件。
 
-Koishi 的投胎模拟器插件。
+## 安装
 
-## 使用
+~~~sh
+yarn add koishi-plugin-toutai
+~~~
 
-设置指令别名后，`toutai.投胎中国` 或 `toutai.投胎世界` 开始模拟。
+在 Koishi 配置中启用 koishi-plugin-toutai，并提供 puppeteer 和 database 服务。
 
 ## 指令
 
 | 指令 | 说明 |
 | --- | --- |
-| `toutai` | 查看帮助 |
-| `toutai.投胎中国` | 投胎到中国 |
-| `toutai.投胎世界` | 投胎到世界 |
-| `toutai.中国投胎记录` / `toutai.世界投胎记录` | 查看记录 |
-| `toutai.中国投胎排行榜` / `toutai.世界投胎排行榜` | 查看排行榜 |
+| toutai | 查看帮助 |
+| toutai.投胎中国 | 开始中国模拟 |
+| toutai.投胎世界 | 开始世界模拟 |
+| toutai.中国投胎记录 / toutai.世界投胎记录 | 查看记录 |
+| toutai.中国投胎排行榜 / toutai.世界投胎排行榜 | 查看排行 |
 
-## QQ 群
+使用前可为指令设置别名。
 
-956758505
+## 许可证
 
-<br>
-
-#### License
-
-<sup>
-Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
-2.0</a> or <a href="LICENSE-MIT">MIT license</a> at your option.
-</sup>
-
-<br>
-
-<sub>
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in this crate by you, as defined in the Apache-2.0 license, shall
-be dual licensed as above, without any additional terms or conditions.
-</sub>
+可按 [Apache-2.0](LICENSE-APACHE) 或 [MIT](LICENSE-MIT) 使用。
