@@ -9,17 +9,17 @@ export const inject = {
 };
 export const usage = `## 使用
 
-设置指令别名后，\`toutai.投胎中国\` 或 \`toutai.投胎世界\` 开始模拟。
+使用前可以为指令设置别名。\`toutai.投胎中国\` 或 \`toutai.投胎世界\` 开始模拟。
 
 ## 指令
 
 | 指令 | 说明 |
 | --- | --- |
-| \`toutai\` | 查看帮助 |
-| \`toutai.投胎中国\` | 投胎到中国 |
-| \`toutai.投胎世界\` | 投胎到世界 |
-| \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 查看记录 |
-| \`toutai.中国投胎排行榜\` / \`toutai.世界投胎排行榜\` | 查看排行榜 |`;
+| \`toutai\` | 帮助 |
+| \`toutai.投胎中国\` | 开始中国模拟 |
+| \`toutai.投胎世界\` | 开始世界模拟 |
+| \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 记录 |
+| \`toutai.中国投胎排行榜\` / \`toutai.世界投胎排行榜\` | 排行 |`;
 
 export interface Config {
   defaultMaxDisplayCount: number;
