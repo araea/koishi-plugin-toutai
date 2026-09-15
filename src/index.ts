@@ -1,5 +1,6 @@
 import { Context, h, Schema } from "koishi";
 import {} from "koishi-plugin-puppeteer";
+import { ELEVATION, FONT_STACK, lch, MEDAL, scheme, SHAPE } from "./m3";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -176,51 +177,82 @@ interface NeonatalMortalityRateData {
  * ------------------------------------------------------------------ */
 
 // 画布宽度（含 body 内边距），截图裁剪与视口共用此值。
+/** 主色取赭石：投胎讲的是出身与地域，暖土色比冷色更贴题。 */
+const HUE = 42
+const SCHEME = scheme(HUE, false, { tertiaryShift: -60 })
+
 const CARD_WIDTH = 820;
 
 type Tone = "azure" | "rose" | "jade" | "cinnabar" | "gold" | "ink";
 
 // 地图（Canvas 绘制）无法读取 CSS 变量，故单列一份同源色值。
-const CINNABAR = "#A6362C";
-const HEAT_LOW = "#F1E5D0";
-const HEAT_HIGH = "#C2703F";
+const CINNABAR = SCHEME.tertiary;
+/* 热力图两端：同一支色相，低端取色调 94、高端取 48，中间的插值因此是平滑的 */
+const HEAT_LOW = lch(94, 14, HUE);
+const HEAT_HIGH = lch(48, 52, HUE);
 const MAP_FONT =
   '"Noto Sans SC", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif';
 const ECHARTS_CDN =
   "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js";
 
-/** 足迹热度色：0 → 浅茶，1 → 赭红，低值稍作提亮以免难以辨认。 */
+/**
+ * 足迹热度色：0 → 浅茶，1 → 赭红。
+ *
+ * 插值走 LCh 的色调轴而不是 RGB 通道：RGB 直线插值在中段会掉彩度，
+ * 一片本该渐变的地图中间会出现一段发灰的带子。改成只动色调就没这个问题。
+ */
 function heatColor(ratio: number): string {
   const t = Math.pow(Math.max(0, Math.min(1, ratio)), 0.6);
-  const from = [241, 229, 208];
-  const to = [194, 112, 63];
-  const channel = (i: number) => Math.round(from[i] + (to[i] - from[i]) * t);
-  return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
+  return lch(94 - t * 46, 14 + t * 38, HUE);
 }
+
+/**
+ * 六支强调色。名字沿用原来的青、绯、翠、朱、金、墨，但取值改由 LCh 推出：
+ * 色调统一 48、彩度统一 44，只有色相在变。于是并排出现时明度是齐的，
+ * 谁也不会因为更亮而抢先被看到——顺序该由数据决定，不该由颜色决定。
+ */
+const TONES: Record<string, number> = {
+  azure: 248,
+  rose: 18,
+  jade: 152,
+  cinnabar: 32,
+  gold: 82,
+  ink: 60,
+}
+
+const toneRules = Object.entries(TONES)
+  .map(([name, hue]) => {
+    const chroma = name === 'ink' ? 6 : 44
+    return `.t-${name} { --tone: ${lch(48, chroma, hue)}; --tone-soft: ${lch(94, Math.min(chroma, 16), hue)}; }`
+  })
+  .join('\n')
 
 const BASE_CSS = `
 *, *::before, *::after { box-sizing: border-box; }
 
 :root {
-    --paper: #F4EFE4;
-    --card: #FFFDF8;
-    --ink: #221E19;
-    --ink-2: #514840;
-    --ink-3: #8B8074;
-    --line: #E2D9C6;
-    --line-soft: #EFE8DA;
-    --gold: #B08D4F;
-    --cinnabar: #A6362C;
-    --font-serif: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
-    --font-sans: "Noto Sans SC", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+    --paper: ${SCHEME.surface};
+    --card: ${SCHEME.surfaceContainerLowest};
+    --ink: ${SCHEME.onSurface};
+    --ink-2: ${SCHEME.onSurfaceVariant};
+    --ink-3: ${SCHEME.outline};
+    --line: ${SCHEME.outlineVariant};
+    --line-soft: ${SCHEME.surfaceContainerHigh};
+    --accent: ${SCHEME.primary};
+    --accent-2: ${SCHEME.tertiary};
+    --surface-1: ${SCHEME.surfaceContainerLow};
+    --surface-2: ${SCHEME.surfaceContainer};
+    --surface-3: ${SCHEME.surfaceContainerHigh};
+    --radius-s: ${SHAPE.small}px;
+    --radius-m: ${SHAPE.medium}px;
+    --radius-l: ${SHAPE.large}px;
+    --radius-xl: ${SHAPE.extraLarge}px;
+    /* 正文与数字同一支字体栈，不再分「衬线标题 / 无衬线正文」两套 */
+    --font-serif: ${FONT_STACK};
+    --font-sans: ${FONT_STACK};
 }
 
-.t-azure    { --tone: #3E6C93; --tone-soft: rgba(62, 108, 147, .13); }
-.t-rose     { --tone: #BC5A62; --tone-soft: rgba(188, 90, 98, .13); }
-.t-jade     { --tone: #4F7F63; --tone-soft: rgba(79, 127, 99, .13); }
-.t-cinnabar { --tone: #A6362C; --tone-soft: rgba(166, 54, 44, .13); }
-.t-gold     { --tone: #B08D4F; --tone-soft: rgba(176, 141, 79, .16); }
-.t-ink      { --tone: #514840; --tone-soft: rgba(81, 72, 64, .10); }
+${toneRules}
 
 html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 
@@ -233,12 +265,6 @@ body {
     color: var(--ink);
     font-family: var(--font-sans);
     background-color: var(--paper);
-    /* 纸纹：两层柔光 + 极淡的经纬纤维 */
-    background-image:
-        radial-gradient(120% 90% at 10% 0%, rgba(255, 253, 246, .96) 0%, rgba(244, 239, 228, 0) 58%),
-        radial-gradient(100% 80% at 100% 100%, rgba(176, 141, 79, .12) 0%, rgba(244, 239, 228, 0) 55%),
-        repeating-linear-gradient(90deg, rgba(34, 30, 25, .020) 0 1px, rgba(34, 30, 25, 0) 1px 4px),
-        repeating-linear-gradient(0deg, rgba(34, 30, 25, .016) 0 1px, rgba(34, 30, 25, 0) 1px 5px);
 }
 
 /* ---------- 纸张 ---------- */
@@ -248,32 +274,11 @@ body {
     max-width: ${CARD_WIDTH - 44}px;
     padding: 34px 36px 24px;
     background: var(--card);
-    border: 1px solid var(--line);
-    box-shadow:
-        0 0 0 1px rgba(255, 255, 255, .8) inset,
-        0 24px 46px -32px rgba(34, 30, 25, .55);
+    /* 层次由容器色差和高度阴影表达，不再靠双层描边 */
+    border-radius: var(--radius-xl);
+    box-shadow: ${ELEVATION[2]};
 }
 
-.sheet::before {
-    content: "";
-    position: absolute;
-    inset: 7px;
-    border: 1px solid rgba(176, 141, 79, .30);
-    pointer-events: none;
-}
-
-.corner {
-    position: absolute;
-    width: 15px;
-    height: 15px;
-    border: 1.5px solid var(--gold);
-    opacity: .55;
-}
-
-.corner.tl { top: 12px;    left: 12px;  border-right: 0; border-bottom: 0; }
-.corner.tr { top: 12px;    right: 12px; border-left: 0;  border-bottom: 0; }
-.corner.bl { bottom: 12px; left: 12px;  border-right: 0; border-top: 0; }
-.corner.br { bottom: 12px; right: 12px; border-left: 0;  border-top: 0; }
 
 /* ---------- 题头 ---------- */
 .masthead { position: relative; margin-bottom: 22px; padding-right: 84px; }
@@ -303,11 +308,11 @@ body {
     color: var(--ink-2);
 }
 
-.subtitle .sep { margin: 0 9px; color: var(--gold); }
+.subtitle .sep { margin: 0 9px; color: var(--accent); }
 
 .divider { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
 .divider i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--line) 10%, var(--line) 90%, transparent); }
-.divider b { font-size: 10px; font-weight: 400; color: var(--gold); }
+.divider b { font-size: 10px; font-weight: 400; color: var(--accent); }
 
 /* ---------- 朱印 ---------- */
 .seal {
@@ -319,14 +324,13 @@ body {
     direction: rtl;
     width: 62px;
     height: 62px;
-    border: 2px solid var(--cinnabar);
+    border: 2px solid var(--accent-2);
     border-radius: 4px;
     transform: rotate(-4deg);
-    color: var(--cinnabar);
+    color: var(--accent-2);
     font-family: var(--font-serif);
     font-weight: 700;
     opacity: .88;
-    box-shadow: 0 0 0 3px rgba(166, 54, 44, .06);
 }
 
 .seal.four { grid-template-rows: 1fr 1fr; font-size: 19px; }
@@ -338,9 +342,9 @@ body {
 .section:first-child { margin-top: 0; }
 
 .sec-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }
-.sec-hd .mark { width: 3px; height: 15px; background: var(--cinnabar); }
+.sec-hd .mark { width: 3px; height: 15px; border-radius: 999px; background: var(--accent-2); }
 .sec-hd h2 { margin: 0; font-family: var(--font-serif); font-size: 16px; font-weight: 700; letter-spacing: .16em; color: var(--ink); }
-.sec-hd .fill { flex: 1; height: 1px; background: repeating-linear-gradient(90deg, var(--line) 0 3px, transparent 3px 7px); }
+.sec-hd .fill { flex: 1; height: 1px; background: var(--line); }
 .sec-hd .aside { font-size: 12px; letter-spacing: .1em; color: var(--ink-3); }
 
 /* ---------- 数据卡 ---------- */
@@ -354,8 +358,8 @@ body {
     position: relative;
     overflow: hidden;
     padding: 13px 15px 12px;
-    background: linear-gradient(180deg, #FFFDF8 0%, #FAF5EA 100%);
-    border: 1px solid var(--line-soft);
+    background: var(--surface-1);
+    border-radius: var(--radius-l);
 }
 
 .stat::before {
@@ -363,7 +367,7 @@ body {
     position: absolute;
     left: 0; top: 0; bottom: 0;
     width: 2px;
-    background: var(--tone, var(--gold));
+    background: var(--tone, var(--accent));
     opacity: .8;
 }
 
@@ -387,8 +391,8 @@ body {
 .stat.hero { padding: 16px 18px 15px; }
 .stat.hero .v { font-size: 33px; }
 
-.meter { margin-top: 9px; height: 3px; background: rgba(34, 30, 25, .07); }
-.meter i { display: block; height: 100%; background: var(--tone, var(--gold)); opacity: .85; }
+.meter { margin-top: 9px; height: 4px; border-radius: 999px; background: var(--surface-3); }
+.meter i { display: block; height: 100%; border-radius: 999px; background: var(--tone, var(--accent)); }
 
 /* ---------- 帐册（表格） ---------- */
 table.ledger {
@@ -416,14 +420,14 @@ table.ledger {
     border-bottom: 1px solid var(--line-soft);
 }
 
-.ledger tbody tr:nth-child(even) { background: rgba(176, 141, 79, .05); }
+.ledger tbody tr:nth-child(even) { background: var(--surface-1); }
 .ledger tbody tr:last-child td { border-bottom: 1px solid var(--ink); }
 .ledger td.idx { font-family: var(--font-serif); font-size: 15px; color: var(--ink-3); }
 .ledger thead th.l { text-align: left; padding-left: 18px; }
 .ledger td.name { text-align: left; padding-left: 18px; font-size: 16px; letter-spacing: .03em; color: var(--ink); }
 .ledger td.num { font-family: var(--font-serif); font-size: 17px; font-weight: 700; color: var(--ink); }
 .ledger td.num small { font-family: var(--font-sans); font-size: 12px; font-weight: 400; color: var(--ink-3); margin-left: 3px; }
-.ledger tr.self td { background: rgba(176, 141, 79, .13); }
+.ledger tr.self td { background: var(--surface-3); }
 
 /* ---------- 标签 ---------- */
 .chip {
@@ -435,7 +439,7 @@ table.ledger {
     font-size: 13.5px;
     line-height: 1.55;
     color: var(--tone, var(--ink-2));
-    background: var(--tone-soft, rgba(81, 72, 64, .10));
+    background: var(--tone-soft, var(--surface-2));
 }
 
 .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -452,12 +456,13 @@ table.ledger {
     font-family: var(--font-serif);
     font-size: 13px;
     font-weight: 700;
-    color: #FFFDF8;
+    color: #fff;
 }
 
-.medal.m1 { background: linear-gradient(150deg, #E4C264, #AF8B4A); }
-.medal.m2 { background: linear-gradient(150deg, #D2D2CD, #9DA0A0); }
-.medal.m3 { background: linear-gradient(150deg, #D5A47D, #A8744A); }
+/* 金银铜是固定的名次语义，不跟主题色走 */
+.medal.m1 { background: ${MEDAL.gold}; }
+.medal.m2 { background: ${MEDAL.silver}; }
+.medal.m3 { background: ${MEDAL.bronze}; }
 
 /* ---------- 条形榜 ---------- */
 .bars { margin-top: 2px; }
@@ -474,7 +479,7 @@ table.ledger {
 .bar-row:last-child { border-bottom: 0; }
 .bar-row .no { font-family: var(--font-serif); font-size: 13px; color: var(--ink-3); text-align: right; }
 .bar-row .rname { font-size: 15.5px; letter-spacing: .05em; color: var(--ink); text-align: right; }
-.bar-row .track { position: relative; height: 13px; background: rgba(34, 30, 25, .06); }
+.bar-row .track { position: relative; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-3); }
 .bar-row .track i { position: absolute; left: 0; top: 0; bottom: 0; min-width: 2px; background: linear-gradient(90deg, var(--tone-soft), var(--tone)); }
 .bar-row .val { font-size: 14.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .bar-row .val em { margin-left: 7px; font-style: normal; font-size: 12.5px; color: var(--ink-3); }
@@ -541,8 +546,6 @@ ${o.head ?? ""}
 </head>
 <body>
 <div class="sheet">
-    <span class="corner tl"></span><span class="corner tr"></span>
-    <span class="corner bl"></span><span class="corner br"></span>
     <header class="masthead">
         ${sealMarkup(o.seal)}
         <p class="eyebrow">${o.eyebrow ?? "投 胎 模 拟 器"}</p>
@@ -716,12 +719,12 @@ function renderGenderDistribution(
   const body = `
 <div class="donut-wrap">
     <svg class="donut" viewBox="0 0 160 160" width="228" height="228">
-        <circle cx="80" cy="80" r="74" fill="none" stroke="rgba(176,141,79,.35)" stroke-width="1"></circle>
-        <circle cx="80" cy="80" r="62" fill="none" stroke="rgba(34,30,25,.07)" stroke-width="19"></circle>
+        <circle cx="80" cy="80" r="74" fill="none" stroke="${SCHEME.outlineVariant}" stroke-width="1"></circle>
+        <circle cx="80" cy="80" r="62" fill="none" stroke="${SCHEME.surfaceContainerHigh}" stroke-width="19"></circle>
         <g transform="rotate(-90 80 80)">
-            <circle cx="80" cy="80" r="62" fill="none" stroke="#3E6C93" stroke-width="19"
+            <circle cx="80" cy="80" r="62" fill="none" stroke="${lch(48, 44, TONES.azure)}" stroke-width="19"
                     stroke-dasharray="${maleArc.toFixed(2)} ${(circumference - maleArc).toFixed(2)}"></circle>
-            <circle cx="80" cy="80" r="62" fill="none" stroke="#BC5A62" stroke-width="19"
+            <circle cx="80" cy="80" r="62" fill="none" stroke="${lch(48, 44, TONES.rose)}" stroke-width="19"
                     stroke-dasharray="${(circumference - maleArc).toFixed(2)} ${maleArc.toFixed(2)}"
                     stroke-dashoffset="${(-maleArc).toFixed(2)}"></circle>
         </g>
@@ -831,17 +834,17 @@ function renderRankings(
 .bar-row.rank .rname { text-align: left; font-size: 16px; }
 .bar-row.rank .val { text-align: right; font-family: var(--font-serif); font-size: 17px; font-weight: 700; color: var(--ink); }
 .bar-row.rank .val em { font-family: var(--font-sans); font-weight: 400; }
-.bar-row.me { background: linear-gradient(90deg, rgba(176, 141, 79, .16), rgba(176, 141, 79, 0)); }
+.bar-row.me { background: var(--surface-2); border-radius: var(--radius-m); }
 .me-tag {
     display: inline-block;
     margin-left: 8px;
     padding: 1px 7px;
-    border: 1px solid rgba(166, 54, 44, .45);
+    border: 1px solid var(--accent-2);
     border-radius: 2px;
     font-size: 11px;
     font-style: normal;
     letter-spacing: .1em;
-    color: var(--cinnabar);
+    color: var(--accent-2);
 }
 .empty { padding: 26px 0; text-align: center; font-size: 15px; letter-spacing: .1em; color: var(--ink-3); }
 `,
@@ -918,7 +921,7 @@ function renderWorldDemiseHistory(
     colophonLeft: "轮 回 簿 · 殁",
     colophonRight: "愿来世安稳",
     style: `
-.ledger.mourning thead th { border-top-color: var(--cinnabar); }
+.ledger.mourning thead th { border-top-color: var(--accent-2); }
 .ledger.mourning td.name { color: var(--ink-2); }
 `,
   });
@@ -1281,8 +1284,8 @@ function renderFirstAppearance(
     ),
     colophonRight: `${unlocked} / ${totalProvinceCount}`,
     style: `
-.progress { height: 4px; margin-bottom: 16px; background: rgba(34, 30, 25, .07); }
-.progress i { display: block; height: 100%; background: linear-gradient(90deg, rgba(176, 141, 79, .35), var(--gold)); }
+.progress { height: 4px; margin-bottom: 16px; border-radius: 999px; background: var(--surface-3); }
+.progress i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
 .ledger td.name { text-align: center; padding-left: 10px; letter-spacing: .08em; }
 `,
   });
@@ -1313,7 +1316,7 @@ function buildMapPage(o: {
 .plate {
     position: relative;
     padding: 10px;
-    background: linear-gradient(180deg, #FBF6EA, #F5EEDF);
+    background: var(--surface-1);
     border: 1px solid var(--line);
 }
 
@@ -1321,7 +1324,7 @@ function buildMapPage(o: {
     content: "";
     position: absolute;
     inset: 4px;
-    border: 1px solid rgba(176, 141, 79, .28);
+    border: 1px solid var(--line);
     pointer-events: none;
 }
 
@@ -1338,7 +1341,7 @@ function buildMapPage(o: {
 .legend .ramp { width: 110px; height: 7px; background: linear-gradient(90deg, ${HEAT_LOW}, ${HEAT_HIGH}); }
 .legend .spacer { flex: 1; }
 .legend .key { display: inline-flex; align-items: center; gap: 6px; }
-.legend .key i { width: 9px; height: 9px; border-radius: 50%; background: var(--cinnabar); }
+.legend .key i { width: 9px; height: 9px; border-radius: 50%; background: var(--accent-2); }
 .legend b { font-weight: 400; color: var(--ink-2); }
 `,
   });
@@ -1400,7 +1403,7 @@ myChart.setOption({
         center: ${JSON.stringify(birthResultInWorld.center)},
         silent: true,
         label: { show: false },
-        itemStyle: { areaColor: '#E7DFCF', borderColor: '#C6BAA3', borderWidth: 0.6 },
+        itemStyle: { areaColor: '${SCHEME.surfaceContainerHigh}', borderColor: '${SCHEME.outlineVariant}', borderWidth: 0.6 },
         regions: ${JSON.stringify(
           nameEn
             ? [
