@@ -1828,7 +1828,7 @@ export function apply(ctx: Context, config: Config) {
   });
 
   ctx
-    .command("toutai.中国投胎记录", "中国投胎记录帮助")
+    .command("toutai.中国投胎记录", "查看中国投胎记录")
     .action(async ({ session }, startIndex) => {
       await session.execute(`toutai.中国投胎记录 -h`);
     });
@@ -2054,7 +2054,7 @@ export function apply(ctx: Context, config: Config) {
     });
 
   ctx
-    .command("toutai.世界投胎记录", "世界投胎记录帮助")
+    .command("toutai.世界投胎记录", "查看世界投胎记录")
     .action(async ({ session }, startIndex) => {
       await session.execute(`toutai.世界投胎记录 -h`);
     });
@@ -2198,7 +2198,7 @@ export function apply(ctx: Context, config: Config) {
     });
 
   ctx
-    .command("toutai.中国投胎排行榜", "中国投胎排行榜帮助")
+    .command("toutai.中国投胎排行榜", "查看中国投胎排行榜")
     .action(async ({ session }, startIndex) => {
       await session.execute(`toutai.中国投胎排行榜 -h`);
     });
@@ -2348,7 +2348,7 @@ export function apply(ctx: Context, config: Config) {
   });
 
   ctx
-    .command("toutai.世界投胎排行榜", "世界投胎排行榜帮助")
+    .command("toutai.世界投胎排行榜", "查看世界投胎排行榜")
     .action(async ({ session }, startIndex) => {
       await session.execute(`toutai.世界投胎排行榜 -h`);
     });
