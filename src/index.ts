@@ -774,7 +774,7 @@ function renderGenderDistribution(
 /** 排行榜：名次、玩家、条形长短与次数。 */
 function renderRankings(
   toutaiRecords: ToutaiRecord[],
-  maxLeaderboardDisplayCount: number,
+  count: number,
   options: {
     title: string;
     seal: string;
@@ -793,7 +793,7 @@ function renderRankings(
     .filter((row) => row.value > 0)
     .sort((a, b) => b.value - a.value);
 
-  const rows = scored.slice(0, maxLeaderboardDisplayCount);
+  const rows = scored.slice(0, count);
   const top = rows[0]?.value ?? 1;
   const selfRank =
     scored.findIndex((row) => row.userId === options.selfUserId) + 1;
@@ -1855,7 +1855,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
+          `📋 命簿上尚无此人的中国投胎记录\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
 
@@ -1914,7 +1914,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
+          `📋 命簿上尚无此人的中国投胎记录\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -1956,7 +1956,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
+          `📋 命簿上尚无此人的中国投胎记录\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -1996,7 +1996,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
+          `📋 命簿上尚无此人的中国投胎记录\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -2036,7 +2036,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
+          `📋 命簿上尚无此人的中国投胎记录\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -2081,7 +2081,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📋 命簿上尚无此人的世界投胎记录。\n发送「toutai.投胎世界」走一遭，名字便落上去了。`,
+          `📋 命簿上尚无此人的世界投胎记录\n发送「toutai.投胎世界」走一遭，名字便落上去了。`,
         );
       }
 
@@ -2135,7 +2135,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📋 命簿上尚无此人的世界投胎记录。\n发送「toutai.投胎世界」走一遭，名字便落上去了。`,
+          `📋 命簿上尚无此人的世界投胎记录\n发送「toutai.投胎世界」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInWorld } = targetUserRecord[0];
@@ -2177,7 +2177,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `📋 命簿上尚无此人的世界夭折记录。\n愿它一直空着。`,
+          `📋 命簿上尚无此人的世界夭折记录\n愿它一直空着。`,
         );
       }
       const { unfortunateDemiseRecordsInWorld } = targetUserRecord[0];
@@ -2205,21 +2205,14 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command(
-      "toutai.中国投胎排行榜.成功次数 [maxLeaderboardDisplayCount:number]",
+      "toutai.中国投胎排行榜.成功次数 [count:posint]",
       "中国投胎次数排行榜",
     )
     .action(
       async (
         { session },
-        maxLeaderboardDisplayCount = config.defaultMaxDisplayCount,
+        count = config.defaultMaxDisplayCount,
       ) => {
-        if (
-          typeof maxLeaderboardDisplayCount !== "number" ||
-          isNaN(maxLeaderboardDisplayCount) ||
-          maxLeaderboardDisplayCount < 0
-        ) {
-          return "⚠️ 榜单人数须是不小于 0 的整数。";
-        }
         let { userId, username } = session;
         username = await getSessionUserName(session);
         await updateNameInPlayerRecord(session, userId, username);
@@ -2229,7 +2222,7 @@ export function apply(ctx: Context, config: Config) {
         );
         const buffer = await generateRankingsImage(
           toutaiRecords,
-          maxLeaderboardDisplayCount,
+          count,
           {
             title: "中国投胎 · 降生次数榜",
             seal: "降生",
@@ -2251,21 +2244,14 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command(
-      "toutai.中国投胎排行榜.夭折次数 [maxLeaderboardDisplayCount:number]",
+      "toutai.中国投胎排行榜.夭折次数 [count:posint]",
       "中国夭折次数排行榜",
     )
     .action(
       async (
         { session },
-        maxLeaderboardDisplayCount = config.defaultMaxDisplayCount,
+        count = config.defaultMaxDisplayCount,
       ) => {
-        if (
-          typeof maxLeaderboardDisplayCount !== "number" ||
-          isNaN(maxLeaderboardDisplayCount) ||
-          maxLeaderboardDisplayCount < 0
-        ) {
-          return "⚠️ 榜单人数须是不小于 0 的整数。";
-        }
         let { userId, username } = session;
         username = await getSessionUserName(session);
         await updateNameInPlayerRecord(session, userId, username);
@@ -2275,7 +2261,7 @@ export function apply(ctx: Context, config: Config) {
         );
         const buffer = await generateRankingsImage(
           toutaiRecords,
-          maxLeaderboardDisplayCount,
+          count,
           {
             title: "中国投胎 · 夭折次数榜",
             seal: "长夜",
@@ -2299,21 +2285,14 @@ export function apply(ctx: Context, config: Config) {
   genders.forEach((gender) => {
     ctx
       .command(
-        `toutai.中国投胎排行榜.${translateGenderChild(gender)}次数 [maxLeaderboardDisplayCount:number]`,
+        `toutai.中国投胎排行榜.${translateGenderChild(gender)}次数 [count:posint]`,
         `中国投胎${translateGenderChild(gender)}次数排行榜`,
       )
       .action(
         async (
           { session },
-          maxLeaderboardDisplayCount = config.defaultMaxDisplayCount,
+          count = config.defaultMaxDisplayCount,
         ) => {
-          if (
-            typeof maxLeaderboardDisplayCount !== "number" ||
-            isNaN(maxLeaderboardDisplayCount) ||
-            maxLeaderboardDisplayCount < 0
-          ) {
-            return "⚠️ 榜单人数须是不小于 0 的整数。";
-          }
           let { userId, username } = session;
           username = await getSessionUserName(session);
           await updateNameInPlayerRecord(session, userId, username);
@@ -2323,7 +2302,7 @@ export function apply(ctx: Context, config: Config) {
           );
           const buffer = await generateRankingsImage(
             toutaiRecords,
-            maxLeaderboardDisplayCount,
+            count,
             {
               title: `中国投胎 · ${translateGenderChild(gender)}次数榜`,
               seal: gender === "male" ? "青阳" : "绛雪",
@@ -2355,21 +2334,14 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command(
-      "toutai.世界投胎排行榜.成功次数 [maxLeaderboardDisplayCount:number]",
+      "toutai.世界投胎排行榜.成功次数 [count:posint]",
       "世界投胎成功次数排行榜",
     )
     .action(
       async (
         { session },
-        maxLeaderboardDisplayCount = config.defaultMaxDisplayCount,
+        count = config.defaultMaxDisplayCount,
       ) => {
-        if (
-          typeof maxLeaderboardDisplayCount !== "number" ||
-          isNaN(maxLeaderboardDisplayCount) ||
-          maxLeaderboardDisplayCount < 0
-        ) {
-          return "⚠️ 榜单人数须是不小于 0 的整数。";
-        }
         let { userId, username } = session;
         username = await getSessionUserName(session);
         await updateNameInPlayerRecord(session, userId, username);
@@ -2379,7 +2351,7 @@ export function apply(ctx: Context, config: Config) {
         );
         const buffer = await generateRankingsImage(
           toutaiRecords,
-          maxLeaderboardDisplayCount,
+          count,
           {
             title: "世界投胎 · 降生次数榜",
             seal: "寰宇",
@@ -2401,21 +2373,14 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command(
-      "toutai.世界投胎排行榜.夭折次数 [maxLeaderboardDisplayCount:number]",
+      "toutai.世界投胎排行榜.夭折次数 [count:posint]",
       "世界投胎夭折次数排行榜",
     )
     .action(
       async (
         { session },
-        maxLeaderboardDisplayCount = config.defaultMaxDisplayCount,
+        count = config.defaultMaxDisplayCount,
       ) => {
-        if (
-          typeof maxLeaderboardDisplayCount !== "number" ||
-          isNaN(maxLeaderboardDisplayCount) ||
-          maxLeaderboardDisplayCount < 0
-        ) {
-          return "⚠️ 榜单人数须是不小于 0 的整数。";
-        }
         let { userId, username } = session;
         username = await getSessionUserName(session);
         await updateNameInPlayerRecord(session, userId, username);
@@ -2425,7 +2390,7 @@ export function apply(ctx: Context, config: Config) {
         );
         const buffer = await generateRankingsImage(
           toutaiRecords,
-          maxLeaderboardDisplayCount,
+          count,
           {
             title: "世界投胎 · 夭折次数榜",
             seal: "长夜",
@@ -2457,21 +2422,14 @@ export function apply(ctx: Context, config: Config) {
   continents.forEach((continent) => {
     ctx
       .command(
-        `toutai.世界投胎排行榜.${continent} [maxLeaderboardDisplayCount:number]`,
+        `toutai.世界投胎排行榜.${continent} [count:posint]`,
         `世界投胎${continent}次数排行榜`,
       )
       .action(
         async (
           { session },
-          maxLeaderboardDisplayCount = config.defaultMaxDisplayCount,
+          count = config.defaultMaxDisplayCount,
         ) => {
-          if (
-            typeof maxLeaderboardDisplayCount !== "number" ||
-            isNaN(maxLeaderboardDisplayCount) ||
-            maxLeaderboardDisplayCount < 0
-          ) {
-            return "⚠️ 榜单人数须是不小于 0 的整数。";
-          }
           let { userId, username } = session;
           username = await getSessionUserName(session);
           await updateNameInPlayerRecord(session, userId, username);
@@ -2481,7 +2439,7 @@ export function apply(ctx: Context, config: Config) {
           );
           const buffer = await generateRankingsImage(
             toutaiRecords,
-            maxLeaderboardDisplayCount,
+            count,
             {
               title: `世界投胎 · ${continent}次数榜`,
               seal: "寰宇",
@@ -2597,7 +2555,7 @@ export function apply(ctx: Context, config: Config) {
 
   function generateRankingsImage(
     toutaiRecords: ToutaiRecord[],
-    maxLeaderboardDisplayCount: number,
+    count: number,
     options: {
       title: string;
       seal: string;
@@ -2608,7 +2566,7 @@ export function apply(ctx: Context, config: Config) {
     },
   ) {
     return capture(
-      renderRankings(toutaiRecords, maxLeaderboardDisplayCount, options),
+      renderRankings(toutaiRecords, count, options),
     );
   }
 
