@@ -10,7 +10,7 @@ export const inject = {
 };
 export const usage = `## 使用
 
-使用前可以为指令设置别名。\`toutai.投胎中国\` 或 \`toutai.投胎世界\` 开始模拟。
+发送 \`toutai.投胎中国\` 或 \`toutai.投胎世界\` 开始模拟。投胎之间有冷却，可在配置里调整。
 
 ## 指令
 
@@ -19,8 +19,8 @@ export const usage = `## 使用
 | \`toutai\` | 帮助 |
 | \`toutai.投胎中国\` | 开始中国模拟 |
 | \`toutai.投胎世界\` | 开始世界模拟 |
-| \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 记录 |
-| \`toutai.中国投胎排行榜\` / \`toutai.世界投胎排行榜\` | 排行 |`;
+| \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 查看投胎记录 |
+| \`toutai.中国投胎排行榜\` / \`toutai.世界投胎排行榜\` | 查看投胎排行榜 |`;
 
 export interface Config {
   defaultMaxDisplayCount: number;
@@ -41,22 +41,22 @@ export const Config: Schema<Config> = Schema.intersect([
     nextReincarnationCooldownSeconds: Schema.number()
       .min(0)
       .default(60)
-      .description(`投胎的冷却时间，单位是秒。`),
+      .description(`两次投胎之间的冷却时间（秒）。`),
     shouldPrefixUsernameInMessageSending: Schema.boolean()
       .default(true)
-      .description(`是否在发送消息时加上 @用户名。`),
+      .description(`回复时 @ 用户。`),
     retractDelay: Schema.number()
       .min(0)
       .default(0)
       .description(
-        `自动撤回等待的时间，单位是秒。值为 0 时不启用自动撤回功能。`,
+        `自动撤回延迟（秒），0 表示不撤回。`,
       ),
     isMapImageIncludedAfterRebirth: Schema.boolean()
       .default(true)
-      .description(`是否在投胎后包含地图图片。`),
+      .description(`投胎后附上一张地图。`),
     imageType: Schema.union(["png", "jpeg", "webp"])
       .default("png")
-      .description(`发送的图片类型。`),
+      .description(`发送的图片格式。`),
   }),
 ]) as any;
 
@@ -1635,7 +1635,7 @@ export function apply(ctx: Context, config: Config) {
     AN: "南极洲",
   };
 
-  ctx.command("toutai", "投胎模拟器帮助").action(async ({ session }) => {
+  ctx.command("toutai", "投胎模拟器 · 一趟人间的随机开局").action(async ({ session }) => {
     await session.execute(`toutai -h`);
   });
 
@@ -1654,7 +1654,7 @@ export function apply(ctx: Context, config: Config) {
         return await sendMessage(
           session,
           `⏳ 轮回未启
-　黄泉路上尚在排队，请再候 ${remainingWaitTime} 秒。`,
+　黄泉路上尚在排队，再候 ${remainingWaitTime} 秒。`,
         );
       }
     }
@@ -1743,7 +1743,7 @@ export function apply(ctx: Context, config: Config) {
         return await sendMessage(
           session,
           `⏳ 轮回未启
-　黄泉路上尚在排队，请再候 ${remainingWaitTime} 秒。`,
+　黄泉路上尚在排队，再候 ${remainingWaitTime} 秒。`,
         );
       }
     }
@@ -1855,7 +1855,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `⚠️ 未找到此人的中国投胎记录。`,
+          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
 
@@ -1914,7 +1914,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `⚠️ 未找到此人的中国投胎记录。`,
+          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -1956,7 +1956,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `⚠️ 未找到此人的中国投胎记录。`,
+          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -1996,7 +1996,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `⚠️ 未找到此人的中国投胎记录。`,
+          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -2036,7 +2036,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `⚠️ 未找到此人的中国投胎记录。`,
+          `📋 命簿上尚无此人的中国投胎记录。\n发送「toutai.投胎中国」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInChina } = targetUserRecord[0];
@@ -2081,7 +2081,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `⚠️ 未找到此人的世界投胎记录。`,
+          `📋 命簿上尚无此人的世界投胎记录。\n发送「toutai.投胎世界」走一遭，名字便落上去了。`,
         );
       }
 
@@ -2135,7 +2135,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `⚠️ 未找到此人的世界投胎记录。`,
+          `📋 命簿上尚无此人的世界投胎记录。\n发送「toutai.投胎世界」走一遭，名字便落上去了。`,
         );
       }
       const { birthResultsInWorld } = targetUserRecord[0];
@@ -2177,7 +2177,7 @@ export function apply(ctx: Context, config: Config) {
       ) {
         return sendMessage(
           session,
-          `⚠️ 未找到此人的世界夭折记录。`,
+          `📋 命簿上尚无此人的世界夭折记录。\n愿它一直空着。`,
         );
       }
       const { unfortunateDemiseRecordsInWorld } = targetUserRecord[0];
@@ -2218,7 +2218,7 @@ export function apply(ctx: Context, config: Config) {
           isNaN(maxLeaderboardDisplayCount) ||
           maxLeaderboardDisplayCount < 0
         ) {
-          return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
+          return "⚠️ 榜单人数须是不小于 0 的整数。";
         }
         let { userId, username } = session;
         username = await getSessionUserName(session);
@@ -2264,7 +2264,7 @@ export function apply(ctx: Context, config: Config) {
           isNaN(maxLeaderboardDisplayCount) ||
           maxLeaderboardDisplayCount < 0
         ) {
-          return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
+          return "⚠️ 榜单人数须是不小于 0 的整数。";
         }
         let { userId, username } = session;
         username = await getSessionUserName(session);
@@ -2312,7 +2312,7 @@ export function apply(ctx: Context, config: Config) {
             isNaN(maxLeaderboardDisplayCount) ||
             maxLeaderboardDisplayCount < 0
           ) {
-            return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
+            return "⚠️ 榜单人数须是不小于 0 的整数。";
           }
           let { userId, username } = session;
           username = await getSessionUserName(session);
@@ -2368,7 +2368,7 @@ export function apply(ctx: Context, config: Config) {
           isNaN(maxLeaderboardDisplayCount) ||
           maxLeaderboardDisplayCount < 0
         ) {
-          return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
+          return "⚠️ 榜单人数须是不小于 0 的整数。";
         }
         let { userId, username } = session;
         username = await getSessionUserName(session);
@@ -2414,7 +2414,7 @@ export function apply(ctx: Context, config: Config) {
           isNaN(maxLeaderboardDisplayCount) ||
           maxLeaderboardDisplayCount < 0
         ) {
-          return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
+          return "⚠️ 榜单人数须是不小于 0 的整数。";
         }
         let { userId, username } = session;
         username = await getSessionUserName(session);
@@ -2470,7 +2470,7 @@ export function apply(ctx: Context, config: Config) {
             isNaN(maxLeaderboardDisplayCount) ||
             maxLeaderboardDisplayCount < 0
           ) {
-            return "⚠️ 榜单人数须是不小于 0 的数字，请重新输入。";
+            return "⚠️ 榜单人数须是不小于 0 的整数。";
           }
           let { userId, username } = session;
           username = await getSessionUserName(session);
