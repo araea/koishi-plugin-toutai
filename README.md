@@ -1,6 +1,6 @@
-# koishi-plugin-toutai
+# 投胎模拟器
 
-投胎模拟器 · 一趟人间的随机开局
+Koishi 插件，随机生成中国或世界范围的人生开局，并记录结果。
 
 ## 安装
 
@@ -8,19 +8,19 @@
 yarn add koishi-plugin-toutai
 ```
 
-在 Koishi 配置中启用，并提供 puppeteer 与 database 服务。
+在 Koishi 中启用，并安装 `database` 与 `puppeteer` 服务。
 
 ## 指令
 
 | 指令 | 说明 |
 | --- | --- |
-| `toutai` | 帮助 |
+| `toutai` | 查看帮助 |
 | `toutai.投胎中国` | 开始中国模拟 |
 | `toutai.投胎世界` | 开始世界模拟 |
-| `toutai.中国投胎记录` / `toutai.世界投胎记录` | 记录 |
-| `toutai.中国投胎排行榜` / `toutai.世界投胎排行榜` | 排行 |
+| `toutai.中国投胎记录` / `toutai.世界投胎记录` | 查看记录 |
+| `toutai.中国投胎排行榜` / `toutai.世界投胎排行榜` | 查看排行 |
 
-使用前可为指令设置别名。
+可在 Koishi 中为指令设置别名。
 
 ## 许可证
 
