@@ -1,3 +1,4 @@
+import { MAP_SCHEME, MAP_COLORS, HEAT_RAMP, heatColor } from './map-theme'
 import { present } from './ux'
 import { Context, h, Schema } from "koishi";
 import {} from "koishi-plugin-puppeteer";
@@ -8,8 +9,8 @@ import {
   EMPHASIZED_WEIGHT,
   FONT_STACK,
   lch,
-  onColor,
   scheme,
+  SPACING,
   TYPE,
 } from "./m3";
 import * as path from "path";
@@ -197,32 +198,10 @@ const CARD_WIDTH = 820;
 
 type Tone = "azure" | "rose" | "jade" | "cinnabar" | "gold" | "ink";
 
-/**
- * 本次落点的强调色：朱砂红。地图（Canvas 绘制）无法读取 CSS 变量，故单列色值。
- * 它必须是整张图里最跳的颜色——历史足迹是浅茶 → 赭橙（色相 42）的热力渐变，
- * 这里取更深、更艳的红（色调 40、彩度 72、色相 28），与渐变末端也拉得开。
- * 早先用的是 tertiary，在 Tonal Spot 下只有彩度 24 的橄榄褐，比历史足迹还暗，层级反了。
- */
-const CINNABAR = lch(40, 72, 28);
-const ON_CINNABAR = onColor(CINNABAR);
-/* 热力图两端：同一支色相，低端取色调 94、高端取 48，中间的插值因此是平滑的 */
-const HEAT_LOW = lch(94, 14, HUE);
-const HEAT_HIGH = lch(48, 52, HUE);
 /** 地图上的文字取系统正文栈，与出图保持一致。 */
 const MAP_FONT = FONT_STACK;
 const ECHARTS_CDN =
   "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js";
-
-/**
- * 足迹热度色：0 → 浅茶，1 → 赭红。
- *
- * 插值走 LCh 的色调轴而不是 RGB 通道：RGB 直线插值在中段会掉彩度，
- * 一片本该渐变的地图中间会出现一段发灰的带子。改成只动色调就没这个问题。
- */
-function heatColor(ratio: number): string {
-  const t = Math.pow(Math.max(0, Math.min(1, ratio)), 0.6);
-  return lch(94 - t * 46, 14 + t * 38, HUE);
-}
 
 /**
  * 六支强调色。名字沿用原来的青、绯、翠、朱、金、墨，但取值改由 LCh 推出：
@@ -1336,84 +1315,75 @@ function buildMapPage(o: {
     title: o.title,
     subtitle: o.subtitle,
     seal: o.seal,
-    body: `<div class="plate"><div id="map" style="width: 100%; height: ${o.chartHeight}px;"></div></div>
+    body: `<div class="plate"><div id="map" role="img" aria-label="${esc(o.docTitle + ": " + o.title)}" style="width: 100%; height: ${o.chartHeight}px;"></div></div>
 <div class="legend">${o.legend}</div>`,
     colophonRight: o.colophonRight,
     head: `<script src="${ECHARTS_CDN}"></script>`,
     script: `<script>${o.script}</script>`,
     style: `
+${baseline(MAP_SCHEME)}
+.masthead { padding-right: 0; }
+.masthead .seal {
+    position: static;
+    display: inline-flex;
+    width: auto;
+    height: auto;
+    gap: 0;
+    padding: ${SPACING.sm}px ${SPACING.lg}px;
+    margin-bottom: ${SPACING.lg}px;
+    direction: ltr;
+    transform: none;
+    opacity: 1;
+    border: 0;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    font-size: ${TYPE.labelLarge.size}px;
+}
+.divider { display: none; }
 .plate {
-    position: relative;
-    padding: 10px;
-    background: var(--md-sys-color-surface-container-low);
-    border: 1px solid var(--md-sys-color-outline-variant);
+    padding: ${SPACING.sm}px;
+    background: ${MAP_COLORS.water};
+    border-radius: var(--md-sys-shape-corner-large);
+    overflow: hidden;
 }
-
-.plate::after {
-    content: "";
-    position: absolute;
-    inset: 4px;
-    border: 1px solid var(--md-sys-color-outline-variant);
-    pointer-events: none;
-}
-
 .legend {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 14px;
-    margin-top: 14px;
+    gap: ${SPACING.md}px;
+    margin-top: ${SPACING.lg}px;
     font-size: ${TYPE.labelMedium.size}px;
-    letter-spacing: .08em;
     color: var(--md-sys-color-on-surface-variant);
 }
-
-.legend .ramp { width: 110px; height: 7px; background: linear-gradient(90deg, ${HEAT_LOW}, ${HEAT_HIGH}); }
+.legend .ramp { width: 88px; height: 12px; border-radius: var(--md-sys-shape-corner-full); background: linear-gradient(90deg, ${HEAT_RAMP}); }
 .legend .spacer { flex: 1; }
-.legend .key { display: inline-flex; align-items: center; gap: 6px; }
-.legend .key i { width: 9px; height: 9px; border-radius: 50%; background: ${CINNABAR}; }
-.legend b { font-weight: ${TYPE.bodyMedium.weight}; color: var(--md-sys-color-on-surface-variant); }
+.legend .key { display: inline-flex; align-items: center; gap: ${SPACING.sm}px; padding: ${SPACING.sm}px ${SPACING.md}px; border-radius: var(--md-sys-shape-corner-full); background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+.legend .key i { font-style: normal; }
+.legend .scale { display: inline-flex; align-items: center; gap: ${SPACING.sm}px; }
+.legend b { font-weight: ${EMPHASIZED_WEIGHT.label}; }
+
 `,
   });
 }
 
-/**
- * 画布里的投影色。canvas 与 ECharts 只吃颜色字符串，色值仍取 SCHEME.shadow，
- * 透明度单列一个参数——脚本里不再另写一套深色。
- */
-function shadowRgba(alpha: number): string {
-  const hex = SCHEME.shadow;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-/** 静态涟漪 + 落点标记：不用动画，保证每次截图一致。 */
+/** Static pin and target ring: position stays visible in grayscale and on small islands. */
 const MAP_MARKER_JS = `
-function marker(coord, color) {
-    var rings = [];
-    for (var i = 0; i < 3; i++) {
-        rings.push({
-            type: 'circle',
-            shape: { cx: 0, cy: 0, r: 9 + i * 9 },
-            style: { stroke: color, fill: 'none', lineWidth: 1.4, opacity: 0.42 - i * 0.12 }
-        });
-    }
+function marker(coord) {
     return {
-        type: 'group',
-        x: coord[0],
-        y: coord[1],
-        children: rings.concat([
-            { type: 'circle', shape: { cx: 0, cy: 0, r: 3.5 }, style: { fill: color } },
+        type: 'group', x: coord[0], y: coord[1],
+        children: [
+            { type: 'circle', shape: { cx: 0, cy: 0, r: 7 }, style: { fill: '${MAP_COLORS.markerHalo}', stroke: '${MAP_COLORS.marker}', lineWidth: 2 } },
+            { type: 'circle', shape: { cx: 0, cy: 0, r: 3 }, style: { fill: '${MAP_COLORS.marker}' } },
             {
                 type: 'path',
                 shape: {
                     d: 'M16 0c-5.523 0-10 4.477-10 10 0 10 10 22 10 22s10-12 10-22c0-5.523-4.477-10-10-10zM16 16c-3.314 0-6-2.686-6-6s2.686-6 6-6 6 2.686 6 6-2.686 6-6 6z',
-                    x: -9, y: -34, width: 18, height: 36
+                    x: -9, y: -38, width: 18, height: 32
                 },
-                style: { fill: color, shadowBlur: 6, shadowColor: '${shadowRgba(0.35)}', shadowOffsetY: 2 }
+                style: { fill: '${MAP_COLORS.marker}', stroke: '${MAP_COLORS.markerHalo}', lineWidth: 2 }
             }
-        ])
+        ]
     };
 }
 `;
@@ -1444,15 +1414,15 @@ myChart.setOption({
         center: ${JSON.stringify(birthResultInWorld.center)},
         silent: true,
         label: { show: false },
-        itemStyle: { areaColor: '${SCHEME.surfaceContainerHigh}', borderColor: '${SCHEME.outlineVariant}', borderWidth: 0.6 },
+        itemStyle: { areaColor: '${MAP_COLORS.land}', borderColor: '${MAP_COLORS.boundary}', borderWidth: 0.6 },
         regions: ${JSON.stringify(
           nameEn
             ? [
                 {
                   name: nameEn,
                   itemStyle: {
-                    areaColor: CINNABAR,
-                    borderColor: SCHEME.onSurface,
+                    areaColor: MAP_COLORS.selected,
+                    borderColor: MAP_COLORS.selected,
                     borderWidth: 1.2,
                   },
                 },
@@ -1472,7 +1442,7 @@ myChart.setOption({
             return marker(api.coord([
                 api.value(0, params.dataIndex),
                 api.value(1, params.dataIndex)
-            ]), '${SCHEME.onSurface}');
+            ]));
         }
     }]
 });
@@ -1484,7 +1454,7 @@ myChart.setOption({
     subtitle: `命主 ${esc(username)}<span class="sep">❖</span>第 ${birthResultInWorld.index} 次轮回 · 已落人间`,
     seal: "寰宇",
     chartHeight: 372,
-    legend: `<span class="key"><i></i>本次落点</span>
+    legend: `<span class="key"><i aria-hidden="true">◎</i>本次落点</span>
 <span>${birthResultInWorld.dictContinent} · <b>${birthResultInWorld.dictName}</b></span>
 <span class="spacer"></span>
 <span>经纬 ${birthResultInWorld.coordinate[0].toFixed(1)}, ${birthResultInWorld.coordinate[1].toFixed(1)}</span>`,
@@ -1500,7 +1470,7 @@ function renderChinaMap(
   chinaData: China,
   totalProvinceCount: number,
 ): string {
-  // 各省累计概率决定颜色深浅，本次落点单独以朱砂标出。
+  // 足迹以同色相的浅色阶呈现，本次落点使用 primary 与对应 on-primary。
   const provinceWeights: { [province: string]: number } = {};
   for (const result of birthResults) {
     provinceWeights[result.province] =
@@ -1510,17 +1480,23 @@ function renderChinaMap(
   const weights = Object.values(provinceWeights);
   const maxWeight = weights.length ? Math.max(...weights) : 0;
 
-  const regions = Object.entries(provinceWeights).map(([name, weight]) => ({
+  const regions = Object.entries(provinceWeights).filter(([name]) => name !== birthResult.province).map(([name, weight]) => ({
     name,
     itemStyle: { areaColor: heatColor(maxWeight ? weight / maxWeight : 0) },
+    label: { color: MAP_COLORS.label },
   }));
 
   regions.push({
     name: birthResult.province,
-    itemStyle: { areaColor: CINNABAR, borderColor: SCHEME.onSurface, borderWidth: 1.4 },
-    /* 省份填的是朱砂，字色按对比度取 onColor 才压得住；落点针用墨色，压在朱砂上也看得见 */
+    itemStyle: { areaColor: MAP_COLORS.selected, borderColor: MAP_COLORS.selected, borderWidth: 1.4 },
+    // 落点文字有独立底色，小省份也不会把白字挤到浅色邻省上。
     label: {
-      color: ON_CINNABAR,
+      color: MAP_COLORS.onSelected,
+      backgroundColor: MAP_COLORS.selected,
+      borderRadius: SPACING.xs,
+      padding: [SPACING.xs, SPACING.sm],
+      offset: [0, 20],
+      formatter: `${birthResult.province}\n本次落点`,
       fontSize: TYPE.labelSmall.size,
       fontWeight: EMPHASIZED_WEIGHT.label,
     },
@@ -1551,8 +1527,8 @@ myChart.setOption({
         roam: false,
         zoom: 1.2,
         silent: true,
-        label: { show: true, fontSize: ${TYPE.labelSmall.size}, color: '${SCHEME.onSurfaceVariant}' },
-        itemStyle: { areaColor: '${SCHEME.surfaceContainerLow}', borderColor: '${SCHEME.outlineVariant}', borderWidth: 0.8 },
+        label: { show: true, fontSize: ${TYPE.labelSmall.size}, color: '${MAP_COLORS.label}' },
+        itemStyle: { areaColor: '${MAP_COLORS.land}', borderColor: '${MAP_COLORS.boundary}', borderWidth: 0.8 },
         emphasis: { disabled: true },
         regions: ${JSON.stringify(regions)}
     }${
@@ -1569,7 +1545,7 @@ myChart.setOption({
             return marker(api.coord([
                 api.value(0, params.dataIndex),
                 api.value(1, params.dataIndex)
-            ]), '${SCHEME.onSurface}');
+            ]));
         }
     }]`
         : ""
@@ -1583,9 +1559,8 @@ myChart.setOption({
     subtitle: `命主 ${esc(username)}<span class="sep">❖</span>第 ${birthResult.index} 次轮回 · 已落人间`,
     seal: "降生",
     chartHeight: 590,
-    legend: `<span class="key"><i></i>本次落点</span>
-<span class="ramp"></span>
-<span>旧迹 由浅及深</span>
+    legend: `<span class="key"><i aria-hidden="true">◎</i>本次落点</span>
+<span class="scale"><span>旧迹权重 低</span><span class="ramp" aria-hidden="true"></span><span>高</span></span>
 <span class="spacer"></span>
 <span>已踏足 <b>${Object.keys(provinceWeights).length}</b> / ${totalProvinceCount} 省</span>`,
     colophonRight: "山河万里，此处是家",
