@@ -8,6 +8,7 @@ import {
   EMPHASIZED_WEIGHT,
   FONT_STACK,
   lch,
+  onColor,
   scheme,
   TYPE,
 } from "./m3";
@@ -196,8 +197,14 @@ const CARD_WIDTH = 820;
 
 type Tone = "azure" | "rose" | "jade" | "cinnabar" | "gold" | "ink";
 
-// 地图（Canvas 绘制）无法读取 CSS 变量，故单列一份同源色值。
-const CINNABAR = SCHEME.tertiary;
+/**
+ * 本次落点的强调色：朱砂红。地图（Canvas 绘制）无法读取 CSS 变量，故单列色值。
+ * 它必须是整张图里最跳的颜色——历史足迹是浅茶 → 赭橙（色相 42）的热力渐变，
+ * 这里取更深、更艳的红（色调 40、彩度 72、色相 28），与渐变末端也拉得开。
+ * 早先用的是 tertiary，在 Tonal Spot 下只有彩度 24 的橄榄褐，比历史足迹还暗，层级反了。
+ */
+const CINNABAR = lch(40, 72, 28);
+const ON_CINNABAR = onColor(CINNABAR);
 /* 热力图两端：同一支色相，低端取色调 94、高端取 48，中间的插值因此是平滑的 */
 const HEAT_LOW = lch(94, 14, HUE);
 const HEAT_HIGH = lch(48, 52, HUE);
@@ -1363,7 +1370,7 @@ function buildMapPage(o: {
 .legend .ramp { width: 110px; height: 7px; background: linear-gradient(90deg, ${HEAT_LOW}, ${HEAT_HIGH}); }
 .legend .spacer { flex: 1; }
 .legend .key { display: inline-flex; align-items: center; gap: 6px; }
-.legend .key i { width: 9px; height: 9px; border-radius: 50%; background: var(--md-sys-color-tertiary); }
+.legend .key i { width: 9px; height: 9px; border-radius: 50%; background: ${CINNABAR}; }
 .legend b { font-weight: ${TYPE.bodyMedium.weight}; color: var(--md-sys-color-on-surface-variant); }
 `,
   });
@@ -1444,9 +1451,9 @@ myChart.setOption({
                 {
                   name: nameEn,
                   itemStyle: {
-                    areaColor: HEAT_HIGH,
-                    borderColor: SCHEME.primary,
-                    borderWidth: 1,
+                    areaColor: CINNABAR,
+                    borderColor: SCHEME.onSurface,
+                    borderWidth: 1.2,
                   },
                 },
               ]
@@ -1465,7 +1472,7 @@ myChart.setOption({
             return marker(api.coord([
                 api.value(0, params.dataIndex),
                 api.value(1, params.dataIndex)
-            ]), '${CINNABAR}');
+            ]), '${SCHEME.onSurface}');
         }
     }]
 });
@@ -1510,10 +1517,10 @@ function renderChinaMap(
 
   regions.push({
     name: birthResult.province,
-    itemStyle: { areaColor: CINNABAR },
-    /* 省份填的是 CINNABAR（tertiary），字色取 onTertiary 才压得住 */
+    itemStyle: { areaColor: CINNABAR, borderColor: SCHEME.onSurface, borderWidth: 1.4 },
+    /* 省份填的是朱砂，字色按对比度取 onColor 才压得住；落点针用墨色，压在朱砂上也看得见 */
     label: {
-      color: SCHEME.onTertiary,
+      color: ON_CINNABAR,
       fontSize: TYPE.labelSmall.size,
       fontWeight: EMPHASIZED_WEIGHT.label,
     },
@@ -1562,7 +1569,7 @@ myChart.setOption({
             return marker(api.coord([
                 api.value(0, params.dataIndex),
                 api.value(1, params.dataIndex)
-            ]), '${CINNABAR}');
+            ]), '${SCHEME.onSurface}');
         }
     }]`
         : ""
