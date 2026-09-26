@@ -1,4 +1,4 @@
-import { usePresentation } from './ux'
+import { present } from './ux'
 import { Context, h, Schema } from "koishi";
 import {} from "koishi-plugin-puppeteer";
 import {
@@ -1803,7 +1803,6 @@ function firstAppearanceText(
 }
 
 export function apply(ctx: Context, config: Config) {
-  const presentation = usePresentation(ctx, 'toutai')
   ctx.database.extend(
     "toutai_records",
     {
@@ -2955,7 +2954,7 @@ export function apply(ctx: Context, config: Config) {
    * 返回已经拼好的图片元素（失败或关闭时为空串）。
    */
   async function mapImageOf(session: any, render: () => Promise<Buffer>): Promise<string> {
-    if (presentation.textOnly(session) || !config.isMapImageIncludedAfterRebirth) return "";
+    if (!config.isMapImageIncludedAfterRebirth) return "";
     try {
       const mapBuffer = await render();
       return `${h.image(mapBuffer, `image/${config.imageType}`)}\n`;
@@ -3314,7 +3313,6 @@ export function apply(ctx: Context, config: Config) {
     render: () => Promise<Buffer>,
     text: () => string,
   ): Promise<void> {
-    if (presentation.textOnly(session)) { await sendMessage(session, text(), false); return; }
     let buffer: Buffer;
     try {
       buffer = await render();
@@ -3325,7 +3323,7 @@ export function apply(ctx: Context, config: Config) {
     }
     await sendMessage(
       session,
-      presentation.present(session, h.image(buffer, `image/${config.imageType}`), h.text(text())),
+      present(h.image(buffer, `image/${config.imageType}`), h.text(text())),
       false,
     );
   }
@@ -3349,7 +3347,7 @@ export function apply(ctx: Context, config: Config) {
     }
     [messageId] = await session.send(message);
 
-    if (presentation.textOnly(session) || config.retractDelay === 0) return;
+    if (config.retractDelay === 0) return;
 
     const previousMessageId = sentMessages.get(channelId);
     sentMessages.set(channelId, messageId);
