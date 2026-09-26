@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-toutai",
   "description": "Koishi 随机人生模拟插件，生成中国或世界开局并记录结果。",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
