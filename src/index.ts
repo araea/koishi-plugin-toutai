@@ -27,11 +27,11 @@ export const usage = `## 使用
 
 | 指令 | 说明 |
 | --- | --- |
-| \`toutai\` | 帮助 |
+| \`toutai\` | 查看帮助 |
 | \`toutai.投胎中国\` | 开始中国模拟 |
 | \`toutai.投胎世界\` | 开始世界模拟 |
-| \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 查看投胎记录 |
-| \`toutai.中国投胎排行榜\` / \`toutai.世界投胎排行榜\` | 查看投胎排行榜 |`;
+| \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 查看记录 |
+| \`toutai.中国投胎排行榜\` / \`toutai.世界投胎排行榜\` | 查看排行 |`;
 
 export interface Config {
   defaultMaxDisplayCount: number;
