@@ -1,3 +1,4 @@
+import { usePresentation } from './ux'
 import { Context, h, Schema } from "koishi";
 import {} from "koishi-plugin-puppeteer";
 import {
@@ -1589,7 +1590,7 @@ myChart.setOption({
  *  文本兜底
  *
  *  图是增强，不是前提：puppeteer 起不来、截图失败、落点图脚本没载入时，
- *  同一份数据改用一条纯文本送出。整条五行封顶，末行永远是一条能发出去的指令。
+ *  同一份数据改用一条纯文本送出。保留完整请求范围，并提供可执行的后续指令。
  * ------------------------------------------------------------------ */
 
 /** 排行榜的文本兜底。 */
@@ -1608,7 +1609,7 @@ function rankingsText(
     ].join("\n");
   }
 
-  const rows = scored.slice(0, Math.max(1, Math.min(count, 3)));
+  const rows = scored.slice(0, Math.max(1, count));
   const selfRank =
     scored.findIndex((row) => row.userId === options.selfUserId) + 1;
   const standing = selfRank > 0 ? `你位居第 ${selfRank}` : `你尚未上榜`;
@@ -1802,6 +1803,7 @@ function firstAppearanceText(
 }
 
 export function apply(ctx: Context, config: Config) {
+  const presentation = usePresentation(ctx, 'toutai')
   ctx.database.extend(
     "toutai_records",
     {
@@ -1979,7 +1981,7 @@ export function apply(ctx: Context, config: Config) {
           lines.push(entry("胎次", `家中${orderText(birthResult.order)}`));
         }
         lines.push(`　${pickOne(BLESSINGS)}`);
-        const mapImage = await mapImageOf(() =>
+        const mapImage = await mapImageOf(session, () =>
           generateChinaMap(
             toutaiRecord[0]?.birthResultsInChina ?? [birthResult],
             birthResult,
@@ -2089,7 +2091,7 @@ export function apply(ctx: Context, config: Config) {
           timestamp: String(timestamp),
         });
       }
-      const mapImage = await mapImageOf(() =>
+      const mapImage = await mapImageOf(session, () =>
         generateWorldMap(birthResultInWorld, username),
       );
       const message = [
@@ -2952,8 +2954,8 @@ export function apply(ctx: Context, config: Config) {
    * 落点图：部署者关掉图、或渲染失败，都只发文本，不打断这一趟投胎。
    * 返回已经拼好的图片元素（失败或关闭时为空串）。
    */
-  async function mapImageOf(render: () => Promise<Buffer>): Promise<string> {
-    if (!config.isMapImageIncludedAfterRebirth) return "";
+  async function mapImageOf(session: any, render: () => Promise<Buffer>): Promise<string> {
+    if (presentation.textOnly(session) || !config.isMapImageIncludedAfterRebirth) return "";
     try {
       const mapBuffer = await render();
       return `${h.image(mapBuffer, `image/${config.imageType}`)}\n`;
@@ -3312,6 +3314,7 @@ export function apply(ctx: Context, config: Config) {
     render: () => Promise<Buffer>,
     text: () => string,
   ): Promise<void> {
+    if (presentation.textOnly(session)) { await sendMessage(session, text(), false); return; }
     let buffer: Buffer;
     try {
       buffer = await render();
@@ -3322,7 +3325,7 @@ export function apply(ctx: Context, config: Config) {
     }
     await sendMessage(
       session,
-      h.image(buffer, `image/${config.imageType}`),
+      presentation.present(session, h.image(buffer, `image/${config.imageType}`), h.text(text())),
       false,
     );
   }
@@ -3346,7 +3349,7 @@ export function apply(ctx: Context, config: Config) {
     }
     [messageId] = await session.send(message);
 
-    if (config.retractDelay === 0) return;
+    if (presentation.textOnly(session) || config.retractDelay === 0) return;
 
     const previousMessageId = sentMessages.get(channelId);
     sentMessages.set(channelId, messageId);

@@ -1,16 +1,20 @@
 {
   "name": "koishi-plugin-toutai",
   "description": "Koishi 随机人生模拟插件，生成中国或世界开局并记录结果。",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
     "LICENSE-APACHE",
-    "LICENSE-MIT"
+    "LICENSE-MIT",
+    "DESIGN_SYSTEM.md",
+    "CHANGELOG.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
-    "yakumo:after:esbuild": "node scripts/copy-assets.mjs"
+    "yakumo:after:esbuild": "node scripts/copy-assets.mjs",
+    "check:design": "node scripts/check-design-system.mjs"
   },
   "koishi": {
     "service": {
