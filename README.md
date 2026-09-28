@@ -1,6 +1,6 @@
 # 投胎模拟器
 
-在 Koishi 群里随机投胎，模拟降生中国与世界的各项人生结果，并查看记录与排行榜
+Koishi 插件：随机投胎模拟，模拟降生中国与世界的各项人生结果，并查看记录与排行榜
 
 [![GitHub](https://img.shields.io/badge/GitHub-仓库-181717?logo=github)](https://github.com/araea/koishi-plugin-toutai)
 [![npm](https://img.shields.io/badge/npm-包-CC3534?logo=npm)](https://www.npmjs.com/package/koishi-plugin-toutai)
