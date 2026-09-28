@@ -29,7 +29,8 @@ npm i koishi-plugin-toutai
 
 | 配置项 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
-| `defaultMaxDisplayCount` | number | `20` | 排行榜默认显示的人数，0 表示全部 |
+| `defaultMaxDisplayCount` | number | `20` | 排行榜默认显示的人数，0 表示全部（仍受上限约束） |
+| `maxDisplayCount` | number | `100` | 排行榜最多显示的人数，指令后的数字超过按它出图；0 表示不设上限 |
 | `nextReincarnationCooldownSeconds` | number | `60` | 两次投胎之间的冷却时间（秒） |
 | `shouldPrefixUsernameInMessageSending` | boolean | `true` | 回复时 @ 用户 |
 | `retractDelay` | number | `0` | 上一条消息的自动撤回延迟（秒），0 表示不撤回；同一频道只保留最新一条 |

@@ -36,6 +36,7 @@ export const usage = `## 使用
 
 export interface Config {
   defaultMaxDisplayCount: number;
+  maxDisplayCount: number;
   nextReincarnationCooldownSeconds: number;
 
   shouldPrefixUsernameInMessageSending: boolean;
@@ -49,7 +50,10 @@ export const Config: Schema<Config> = Schema.intersect([
     defaultMaxDisplayCount: Schema.number()
       .min(0)
       .default(20)
-      .description("排行榜默认显示的人数。"),
+      .description("排行榜默认显示的人数，0 表示全部（仍受下面的上限约束）。"),
+    maxDisplayCount: Schema.natural()
+      .default(100)
+      .description("排行榜最多显示的人数：指令后面的数字超过它按它出图，0 表示不设上限。"),
     nextReincarnationCooldownSeconds: Schema.number()
       .min(0)
       .default(60)
@@ -774,6 +778,18 @@ function rankRows(
     }))
     .filter((row) => row.value > 0)
     .sort((a, b) => b.value - a.value);
+}
+
+/**
+ * 这一张榜列多少名：指令给了就用指令的，没给用默认值；再收进上限。
+ *
+ * 0 表示「全部」：有上限就列到上限为止，上限也是 0 才真的全部列出（返回 Infinity，
+ * 交给 `slice` 用）。从前默认值配 0 时，图片榜 `slice(0, 0)` 出的是一张空榜。
+ */
+function displayLimit(requested: number | undefined, fallback: number, max: number) {
+  const n = requested ?? fallback;
+  if (n <= 0) return max > 0 ? max : Infinity;
+  return max > 0 ? Math.min(n, max) : n;
 }
 
 /** 排行榜：名次、玩家、条形长短与次数。 */
@@ -2493,8 +2509,9 @@ export function apply(ctx: Context, config: Config) {
     .action(
       async (
         { session },
-        count = config.defaultMaxDisplayCount,
+        requested?: number,
       ) => {
+        const count = displayLimit(requested, config.defaultMaxDisplayCount, config.maxDisplayCount);
         let { userId, username } = session;
         username = await getSessionUserName(session);
         await updateNameInPlayerRecord(session, userId, username);
@@ -2527,8 +2544,9 @@ export function apply(ctx: Context, config: Config) {
     .action(
       async (
         { session },
-        count = config.defaultMaxDisplayCount,
+        requested?: number,
       ) => {
+        const count = displayLimit(requested, config.defaultMaxDisplayCount, config.maxDisplayCount);
         let { userId, username } = session;
         username = await getSessionUserName(session);
         await updateNameInPlayerRecord(session, userId, username);
@@ -2563,8 +2581,9 @@ export function apply(ctx: Context, config: Config) {
       .action(
         async (
           { session },
-          count = config.defaultMaxDisplayCount,
+          requested?: number,
         ) => {
+          const count = displayLimit(requested, config.defaultMaxDisplayCount, config.maxDisplayCount);
           let { userId, username } = session;
           username = await getSessionUserName(session);
           await updateNameInPlayerRecord(session, userId, username);
@@ -2607,8 +2626,9 @@ export function apply(ctx: Context, config: Config) {
     .action(
       async (
         { session },
-        count = config.defaultMaxDisplayCount,
+        requested?: number,
       ) => {
+        const count = displayLimit(requested, config.defaultMaxDisplayCount, config.maxDisplayCount);
         let { userId, username } = session;
         username = await getSessionUserName(session);
         await updateNameInPlayerRecord(session, userId, username);
@@ -2641,8 +2661,9 @@ export function apply(ctx: Context, config: Config) {
     .action(
       async (
         { session },
-        count = config.defaultMaxDisplayCount,
+        requested?: number,
       ) => {
+        const count = displayLimit(requested, config.defaultMaxDisplayCount, config.maxDisplayCount);
         let { userId, username } = session;
         username = await getSessionUserName(session);
         await updateNameInPlayerRecord(session, userId, username);
@@ -2685,8 +2706,9 @@ export function apply(ctx: Context, config: Config) {
       .action(
         async (
           { session },
-          count = config.defaultMaxDisplayCount,
+          requested?: number,
         ) => {
+          const count = displayLimit(requested, config.defaultMaxDisplayCount, config.maxDisplayCount);
           let { userId, username } = session;
           username = await getSessionUserName(session);
           await updateNameInPlayerRecord(session, userId, username);
