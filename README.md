@@ -1,6 +1,9 @@
 # 投胎模拟器
 
-Koishi 插件 · 投胎模拟器
+在 Koishi 群里随机投胎，模拟降生中国与世界的各项人生结果，并查看记录与排行榜
+
+[![GitHub](https://img.shields.io/badge/GitHub-仓库-181717?logo=github)](https://github.com/araea/koishi-plugin-toutai)
+[![npm](https://img.shields.io/badge/npm-包-CC3534?logo=npm)](https://www.npmjs.com/package/koishi-plugin-toutai)
 
 ## 安装
 
@@ -8,7 +11,22 @@ Koishi 插件 · 投胎模拟器
 yarn add koishi-plugin-toutai
 ```
 
-在 Koishi 中启用，并安装 `database` 与 `puppeteer` 服务。
+启用插件后，需安装 `database` 与 `puppeteer` 服务（`koishi-plugin-puppeteer`）。
+
+## 快速使用
+
+发送 `toutai.投胎中国` 或 `toutai.投胎世界` 开始模拟。两次投胎之间有冷却时间，可在配置中调整。
+
+## 配置
+
+| 配置项 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `defaultMaxDisplayCount` | number | 20 | 排行榜默认显示的人数。 |
+| `nextReincarnationCooldownSeconds` | number | 60 | 两次投胎之间的冷却时间（秒）。 |
+| `shouldPrefixUsernameInMessageSending` | boolean | true | 回复时 @ 用户。 |
+| `retractDelay` | number | 0 | 上一条消息的自动撤回延迟（秒），0 表示不撤回。同一频道只保留最新一条。 |
+| `isMapImageIncludedAfterRebirth` | boolean | true | 投胎后附上一张地图。 |
+| `imageType` | "png" \| "jpeg" \| "webp" | "png" | 发送的图片格式。 |
 
 ## 指令
 
@@ -20,23 +38,11 @@ yarn add koishi-plugin-toutai
 | `toutai.中国投胎记录` / `toutai.世界投胎记录` | 查看记录 |
 | `toutai.中国投胎排行榜` / `toutai.世界投胎排行榜` | 查看排行 |
 
-可在 Koishi 中为指令设置别名。
+## 限制 / 风险
 
-## 地图设计与验证
+需要 `database` 服务保存记录，以及 `puppeteer` 服务渲染投胎结果地图。地图图片默认随投胎结果发送（`isMapImageIncludedAfterRebirth`）。
 
-地图以 [M3 Expressive](https://m3.material.io/blog/building-with-m3-expressive) 为视觉规范，角色配色与 HCT 算法复用共享设计系统；[Apple HIG](https://developer.apple.com/design/human-interface-guidelines/accessibility) 用于平台体验与可访问性。`src/map-theme.ts` 集中维护地图组件 Token：青绿色 primary 表示本次落点，浅色单调色阶表示历史权重，定位针、靶心和文字标签补充颜色信息。图例与地图使用相同的 HCT 色阶。
+## 必要链接
 
-按 [WCAG 2.2](https://www.w3.org/TR/WCAG22/) 的对比度要求检查地图文字（至少 4.5:1）与落点识别（至少 3:1）；保留随地图发送的文本投胎结果。截图不能替代聊天客户端的读屏与缩放验收，也不代表整个客户端已通过 AA 认证。
-
-在现有 Koishi 开发工作区安装 esbuild、puppeteer-core，并提供 Chromium 后运行：
-
-```sh
-node scripts/check-design-system.mjs
-node scripts/verify-maps.mjs
-```
-
-验证脚本检查 101 档颜色、首次投胎、历史足迹、港澳台、世界及小岛地图，生成截图；可用 `CHROMIUM_PATH` 指定浏览器。静态地图不播放动画。
-
-## 许可证
-
-可按 [Apache-2.0](LICENSE-APACHE) 或 [MIT](LICENSE-MIT) 使用。
+- GitHub 仓库：https://github.com/araea/koishi-plugin-toutai
+- npm 包：https://www.npmjs.com/package/koishi-plugin-toutai
