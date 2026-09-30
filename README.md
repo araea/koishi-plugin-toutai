@@ -41,8 +41,7 @@ npm i koishi-plugin-toutai
 
 需要 `database` 服务保存记录，以及 `puppeteer` 服务渲染投胎结果地图。地图图片默认随投胎结果发送（`isMapImageIncludedAfterRebirth`）。
 
-## 链接
+## 必要链接
 
 - [设计系统](DESIGN_SYSTEM.md)
-- [更新日志](CHANGELOG.md)
 - [MIT](LICENSE-MIT) / [Apache-2.0](LICENSE-APACHE)
