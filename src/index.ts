@@ -1890,8 +1890,8 @@ export function apply(ctx: Context, config: Config) {
   };
 
   // 入口指令自己列出子指令，不依赖 help 插件；带 -h 时仍由 help 插件接手。
-  const sendHelp = (session: any, name: string, tail: string) => {
-    const { title, entries } = helpOf(session, name);
+  const sendHelp = async (session: any, name: string, tail: string) => {
+    const { title, entries } = await helpOf(session, name);
     return sendMessage(
       session,
       [
@@ -1904,6 +1904,7 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command("toutai", "投胎模拟器 · 一趟人间的随机开局")
+    .userFields(["authority"])
     .action(({ session }) =>
       sendHelp(
         session,
@@ -2125,6 +2126,7 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command("toutai.中国投胎记录", "列出各项投胎记录")
+    .userFields(["authority"])
     .action(({ session }) => sendHelp(session, "toutai.中国投胎记录", "指令后可加 @某人，查看对方的记录。"));
 
   ctx
@@ -2363,6 +2365,7 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command("toutai.世界投胎记录", "列出各项投胎记录")
+    .userFields(["authority"])
     .action(({ session }) => sendHelp(session, "toutai.世界投胎记录", "指令后可加 @某人，查看对方的记录。"));
 
   ctx
@@ -2513,6 +2516,7 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command("toutai.中国投胎排行榜", "列出各类投胎排行榜")
+    .userFields(["authority"])
     .action(({ session }) => sendHelp(session, "toutai.中国投胎排行榜", "指令后可加人数，如「toutai.中国投胎排行榜.成功次数 10」。"));
 
   ctx
@@ -2628,6 +2632,7 @@ export function apply(ctx: Context, config: Config) {
 
   ctx
     .command("toutai.世界投胎排行榜", "列出各类投胎排行榜")
+    .userFields(["authority"])
     .action(({ session }) => sendHelp(session, "toutai.世界投胎排行榜", "指令后可加人数，如「toutai.世界投胎排行榜.成功次数 10」。"));
 
   ctx
