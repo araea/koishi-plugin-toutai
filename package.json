@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-toutai",
   "description": "Koishi 插件：随机投胎模拟，模拟降生中国与世界的各项人生结果，并查看记录与排行榜。",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -13,6 +13,7 @@
     "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
+    "test": "tsx --test test/*.test.ts",
     "yakumo:after:esbuild": "node scripts/copy-assets.mjs",
     "check:design": "node scripts/check-design-system.mjs"
   },
@@ -46,6 +47,7 @@
     "koishi": "^4.18.11"
   },
   "devDependencies": {
-    "koishi-plugin-puppeteer": "^3.9.0"
+    "koishi-plugin-puppeteer": "^3.9.0",
+    "tsx": "^4.23.13"
   }
 }

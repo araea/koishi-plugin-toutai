@@ -14,7 +14,7 @@ let browser
 try {
   const source = await readFile(path.join(root, 'src/index.ts'), 'utf8')
   const entry = path.join(work, 'maps.cjs')
-  await build({ stdin: { contents: source + '\nexport { renderChinaMap, renderWorldMap, MAP_COLORS, MAP_SCHEME, heatColor }; export { contrast, lchOf } from "./m3";', resolveDir: path.join(root, 'src'), loader: 'ts' }, outfile: entry, bundle: true, platform: 'node', format: 'cjs', packages: 'external' })
+  await build({ stdin: { contents: source + '\nexport { renderChinaMap, renderWorldMap, MAP_COLORS, heatColor }; export { MAP_SCHEME } from "./map-theme"; export { contrast, lchOf } from "./m3";', resolveDir: path.join(root, 'src'), loader: 'ts' }, outfile: entry, bundle: true, platform: 'node', format: 'cjs', packages: 'external' })
   const { renderChinaMap, renderWorldMap, MAP_COLORS: c, MAP_SCHEME: scheme, heatColor, contrast, lchOf } = createRequire(import.meta.url)(entry)
   let minText = Infinity, minSelected = Infinity, previous = Infinity
   for (let i = 0; i <= 100; i++) {
@@ -35,17 +35,18 @@ try {
   const result = { id: 1, order: '1', index: 8, gender: '男', category: '城镇', province: '四川', probability: .2 }
   const history = ['新疆', '西藏', '青海', '甘肃', '内蒙古', '河南', '广东', '四川'].map((province, i) => ({ ...result, province, probability: (i + 1) / 8 }))
   const fixtures = [
-    ['china-history', renderChinaMap(history, result, 'n 宝', china, 34)],
-    ['china-first', renderChinaMap([], result, '神尊大人', china, 34)],
-    ...['香港', '澳门', '台湾'].map(province => [province, renderChinaMap(history, { ...result, province }, 'n 宝', china, 34)]),
-    ['world', renderWorldMap({ dictName: '法国', dictContinent: '欧洲', coordinate: [2.35, 48.86], center: [2.35, 48.86], index: 8 }, 'n 宝', world, countries)],
-    ['world-island', renderWorldMap({ dictName: '新加坡', dictContinent: '亚洲', coordinate: [103.8, 1.35], center: [103.8, 1.35], index: 9 }, 'n 宝', world, countries)],
+    ['china-history', renderChinaMap(history, result, 'n 宝', china, 34), '四川'],
+    ['china-first', renderChinaMap([], result, '神尊大人', china, 34), '四川'],
+    // 海南最靠南：名牌在针下方放不下，要翻到针头上方，不能被图版底边裁掉
+    ...['香港', '澳门', '台湾', '海南', '黑龙江'].map(province => [province, renderChinaMap(history, { ...result, province }, 'n 宝', china, 34), province]),
+    ['world', renderWorldMap({ dictName: '法国', dictContinent: '欧洲', coordinate: [2.35, 48.86], center: [2.35, 48.86], index: 8 }, 'n 宝', world, countries), '法国'],
+    ['world-island', renderWorldMap({ dictName: '新加坡', dictContinent: '亚洲', coordinate: [103.8, 1.35], center: [103.8, 1.35], index: 9 }, 'n 宝', world, countries), '新加坡'],
   ]
   const response = await fetch('https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js')
   assert.ok(response.ok)
   const echarts = await response.text()
   browser = await puppeteer.launch({ executablePath: process.env.CHROMIUM_PATH || '/data/data/com.termux/files/usr/bin/chromium-browser', headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] })
-  for (const [name, html] of fixtures) {
+  for (const [name, html, label] of fixtures) {
     const page = await browser.newPage(), errors = []
     page.on('pageerror', e => errors.push(e.message))
     await page.setRequestInterception(true)
@@ -64,7 +65,21 @@ try {
     const selected = state.regions.find(r => r.itemStyle.areaColor === c.selected)
     assert.ok(selected, `${name}: selected region`)
     if (!name.startsWith('world')) assert.equal(new Set(state.regions.map(r => r.name)).size, state.regions.length, 'one style per province')
-    if (selected.label?.formatter) assert.equal(selected.label.formatter, `${selected.name}\n本次落点`)
+    if (!name.startsWith('world')) assert.equal(selected.label?.show, false, `${name}: 落点省的区域标签应关闭，名字由标记名牌承担`)
+    // 名牌是画布里的一个文字元素：取它的包围盒（含父级变换），必须整块落在图版内
+    const box = await page.evaluate(text => {
+      const chart = window.echarts.getInstanceByDom(document.getElementById('map'))
+      const found = chart.getZr().storage.getDisplayList().find(el => el.style && el.style.text === text)
+      if (!found) return null
+      // 文字行（TSpan）只含字形；名牌本体是它的父元素 Text，包围盒带着内边距与底色
+      const owner = found.parent ?? found
+      const rect = owner.getBoundingRect().clone()
+      const matrix = owner.getComputedTransform()
+      if (matrix) rect.applyTransform(matrix)
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, W: chart.getWidth(), H: chart.getHeight() }
+    }, label)
+    assert.ok(box, `${name}: 找不到名牌「${label}」`)
+    assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= box.W && box.y + box.height <= box.H, `${name}: 名牌越出图版 ${JSON.stringify(box)}`)
     await (await page.$('.sheet')).screenshot({ path: path.join(out, `${name}.png`) })
     await writeFile(path.join(out, `${name}.html`), html)
     await page.close()

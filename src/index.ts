@@ -1,4 +1,5 @@
-import { MAP_SCHEME, MAP_COLORS, HEAT_RAMP, heatColor } from './map-theme'
+import { MAP_COLORS, HEAT_RAMP, heatColor } from './map-theme'
+import { SCHEME, SEAL, TONE_CSS, toneRoles, type Tone } from './theme'
 import { present } from './ux'
 import { helpOf } from './help'
 import { Context, h, Schema } from "koishi";
@@ -9,10 +10,6 @@ import {
   ELEVATION,
   EMPHASIZED_WEIGHT,
   FONT_STACK,
-  lch,
-  scheme,
-  SPACING,
-  TYPE,
 } from "./m3";
 import * as path from "path";
 import * as fs from "fs";
@@ -188,295 +185,271 @@ interface NeonatalMortalityRateData {
 /* ------------------------------------------------------------------ *
  *  视觉设计系统 ——《轮回簿》
  *
- *  所有图片共用一套「宣纸 · 墨色 · 朱砂」的版面语言：
- *  暖白纸面、金线内框、四角回纹、朱印题头、editorial 式的横线分栏。
- *  颜色语义固定：青蓝属男、绛红属女、松绿为生、朱砂为殁、赤金为序。
- *  取值全部来自 m3.ts：色相 42 的 SCHEME、SHAPE 的圆角、TYPE 的字阶、ELEVATION 的高度。
+ *  一页暖白的纸，墨色正文。强色只给两样东西：朱印，和承载「生 / 殁 / 男 / 女」
+ *  含义的色块；其余全部是纸面的明度层次（surface-container 系列），不靠色相取悦。
+ *  配色取值见 theme.ts，形状、字阶、高度取自 m3.ts。
+ *
+ *  字号刻意比 M3 的手机基准大一档、最小 14px：聊天里的图会被缩到约一半宽再看，
+ *  按 12px 排的脚注缩出来只剩 5 个点。节奏按 4px 栅格：色块之间 12、分栏之间 36、
+ *  页边 40，同一类间距在所有版式里取同一个值。
  * ------------------------------------------------------------------ */
 
 // 画布宽度（含 body 内边距），截图裁剪与视口共用此值。
-/** 主色取赭石：投胎讲的是出身与地域，暖土色比冷色更贴题。 */
-const HUE = 42
-const SCHEME = scheme(HUE, false, { tertiaryShift: -60 })
-
 const CARD_WIDTH = 820;
-
-type Tone = "azure" | "rose" | "jade" | "cinnabar" | "gold" | "ink";
 
 /** 地图上的文字取系统正文栈，与出图保持一致。 */
 const MAP_FONT = FONT_STACK;
 const ECHARTS_CDN =
   "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js";
 
-/**
- * 六支强调色。名字沿用原来的青、绯、翠、朱、金、墨，但取值改由 LCh 推出：
- * 色调统一 48、彩度统一 44，只有色相在变。于是并排出现时明度是齐的，
- * 谁也不会因为更亮而抢先被看到——顺序该由数据决定，不该由颜色决定。
- */
-const TONES: Record<string, number> = {
-  azure: 248,
-  rose: 18,
-  jade: 152,
-  cinnabar: 32,
-  gold: 82,
-  ink: 60,
-}
-
-const toneRules = Object.entries(TONES)
-  .map(([name, hue]) => {
-    const chroma = name === 'ink' ? 6 : 44
-    return `.t-${name} { --tone: ${lch(48, chroma, hue)}; --tone-soft: ${lch(94, Math.min(chroma, 16), hue)}; }`
-  })
-  .join('\n')
-
 const BASE_CSS = `
 ${baseline(SCHEME)}
 ${components()}
-
-${toneRules}
+${TONE_CSS}
 
 html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 
+/* 页底比纸深一档，纸才托得起来 */
 body {
     margin: 0;
-    padding: 26px 22px 30px;
+    padding: 24px;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     color: var(--md-sys-color-on-surface);
     font-family: var(--md-sys-typescale-font);
-    background-color: var(--md-sys-color-surface);
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: var(--md-sys-color-surface-container);
 }
 
-/* ---------- 纸张 ---------- */
 .sheet {
-    position: relative;
     width: 100%;
-    max-width: ${CARD_WIDTH - 44}px;
-    padding: 34px 36px 24px;
+    max-width: ${CARD_WIDTH - 48}px;
+    padding: 40px 36px 28px;
     background: var(--md-sys-color-surface-container-lowest);
-    /* 层次由容器色差和高度阴影表达，不再靠双层描边 */
-    border-radius: var(--md-sys-shape-corner-extra-large);
-    box-shadow: ${ELEVATION[2]};
+    border-radius: var(--md-sys-shape-corner-extra-large-increased);
+    box-shadow: ${ELEVATION[1]};
 }
-
 
 /* ---------- 题头 ---------- */
-.masthead { position: relative; margin-bottom: 22px; padding-right: 84px; }
+.masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 32px; }
+.masthead .text { flex: 1; min-width: 0; }
 
 .eyebrow {
-    margin: 0 0 9px;
-    font-size: ${TYPE.labelMedium.size}px;
-    letter-spacing: .52em;
-    text-indent: .52em;
-    color: var(--md-sys-color-on-surface-variant);
+    margin: 0 0 8px;
+    font-size: 15px;
+    line-height: 20px;
+    font-weight: ${EMPHASIZED_WEIGHT.label};
+    letter-spacing: .12em;
+    color: var(--md-sys-color-primary);
 }
 
 .title {
     margin: 0;
-    font-family: var(--md-sys-typescale-font);
-    font-size: ${TYPE.headlineLarge.size}px;
+    font-size: 34px;
+    line-height: 44px;
     font-weight: ${EMPHASIZED_WEIGHT.headline};
-    line-height: 1.28;
-    letter-spacing: .05em;
+    letter-spacing: .01em;
     color: var(--md-sys-color-on-surface);
+    overflow-wrap: anywhere;
 }
 
 .subtitle {
     margin: 10px 0 0;
-    font-size: ${TYPE.bodyMedium.size}px;
-    letter-spacing: .04em;
+    font-size: 17px;
+    line-height: 26px;
     color: var(--md-sys-color-on-surface-variant);
 }
+.subtitle b { font-weight: ${EMPHASIZED_WEIGHT.label}; color: var(--md-sys-color-on-surface); overflow-wrap: anywhere; }
+/* 间隔点只是装饰，用描边色即可（文字对比度不适用） */
+.sep { margin: 0 8px; color: var(--md-sys-color-outline); }
 
-.subtitle .sep { margin: 0 9px; color: var(--md-sys-color-primary); }
-
-.divider { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
-.divider i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--md-sys-color-outline-variant) 10%, var(--md-sys-color-outline-variant) 90%, transparent); }
-.divider b { font-size: ${TYPE.labelSmall.size}px; font-weight: ${TYPE.bodyMedium.weight}; color: var(--md-sys-color-primary); }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 
 /* ---------- 朱印 ---------- */
+/* 字号 × 行高 × 两行 = 52px，落在 64px 的印面内，不压边 */
 .seal {
-    position: absolute;
-    top: 2px;
-    right: 0;
-    display: grid;
-    grid-auto-flow: column;
-    direction: rtl;
-    width: 62px;
-    height: 62px;
-    border: 2px solid var(--md-sys-color-tertiary);
-    border-radius: var(--md-sys-shape-corner-extra-small);
-    transform: rotate(-4deg);
-    color: var(--md-sys-color-tertiary);
-    font-family: var(--md-sys-typescale-font);
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--md-sys-shape-corner-large);
+    background: ${SEAL.background};
+    color: ${SEAL.foreground};
+    outline: 1.5px solid rgba(255, 255, 255, .5);
+    outline-offset: -5px;
+    font-size: 24px;
+    line-height: 26px;
     font-weight: ${EMPHASIZED_WEIGHT.title};
-    opacity: .88;
 }
 
-.seal.four { grid-template-rows: 1fr 1fr; font-size: ${TYPE.titleLarge.size}px; }
-.seal.two  { grid-template-rows: 1fr 1fr; grid-auto-flow: row; font-size: ${TYPE.headlineSmall.size}px; }
-.seal span { display: flex; align-items: center; justify-content: center; }
-
 /* ---------- 分栏 ---------- */
-.section { margin-top: 26px; }
-.section:first-child { margin-top: 0; }
+.masthead + .section { margin-top: 0; }
+.section + .section { margin-top: 36px; }
 
-.sec-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }
-.sec-hd .mark { width: 3px; height: 15px; border-radius: var(--md-sys-shape-corner-full); background: var(--md-sys-color-tertiary); }
-.sec-hd h2 { margin: 0; font-family: var(--md-sys-typescale-font); font-size: ${TYPE.titleMedium.size}px; font-weight: ${EMPHASIZED_WEIGHT.title}; letter-spacing: .16em; color: var(--md-sys-color-on-surface); }
-/* 分栏横线直接用组件里的 m3-divider，这里只负责占满剩余宽度 */
-.sec-hd .fill { flex: 1; }
-.sec-hd .aside { font-size: ${TYPE.labelMedium.size}px; letter-spacing: .1em; color: var(--md-sys-color-on-surface-variant); }
+.sec-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.sec-hd h2 { margin: 0; font-size: 22px; line-height: 28px; font-weight: ${EMPHASIZED_WEIGHT.title}; letter-spacing: .02em; color: var(--md-sys-color-on-surface); }
+.sec-hd .aside { font-size: 15px; line-height: 20px; color: var(--md-sys-color-on-surface-variant); text-align: right; }
 
 /* ---------- 数据卡 ---------- */
 .grid { display: grid; gap: 12px; }
+.grid + .grid { margin-top: 12px; }
 .grid.c2 { grid-template-columns: repeat(2, 1fr); }
 .grid.c3 { grid-template-columns: repeat(3, 1fr); }
-.grid.c4 { grid-template-columns: repeat(4, 1fr); }
 .grid.c5 { grid-template-columns: repeat(5, 1fr); }
 
 .stat {
-    position: relative;
-    overflow: hidden;
-    padding: 13px 15px 12px;
-    background: var(--md-sys-color-surface-container-low);
-    border-radius: var(--md-sys-shape-corner-large);
+    --track-bg: rgba(255, 255, 255, .65);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 22px 20px;
+    background: var(--tone-container, var(--md-sys-color-surface-container-low));
+    color: var(--on-tone, var(--md-sys-color-on-surface));
+    border-radius: var(--md-sys-shape-corner-extra-large);
 }
 
-.stat::before {
-    content: "";
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 2px;
-    background: var(--tone, var(--md-sys-color-primary));
-    opacity: .8;
-}
-
-.stat .k { display: block; font-size: ${TYPE.labelMedium.size}px; letter-spacing: .18em; color: var(--md-sys-color-on-surface-variant); }
+.stat .k { font-size: 16px; line-height: 22px; font-weight: ${EMPHASIZED_WEIGHT.label}; }
 
 .stat .v {
     display: flex;
     align-items: baseline;
-    gap: 5px;
-    margin-top: 6px;
-    font-family: var(--md-sys-typescale-font-mono);
-    font-size: ${TYPE.headlineMedium.size}px;
-    font-weight: ${EMPHASIZED_WEIGHT.headline};
-    letter-spacing: .02em;
-    color: var(--tone, var(--md-sys-color-on-surface));
-    font-variant-numeric: tabular-nums;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 42px;
+    line-height: 48px;
+    font-weight: ${EMPHASIZED_WEIGHT.display};
+    letter-spacing: -.01em;
 }
+.stat .v.text { font-size: 32px; line-height: 48px; letter-spacing: .02em; }
+.stat .v small { font-size: 16px; line-height: 22px; font-weight: 500; letter-spacing: 0; }
+.stat .note { margin-top: 4px; font-size: 15px; line-height: 22px; }
+.stat.hero .v { font-size: 52px; line-height: 56px; }
+.stat .meter { margin-top: auto; padding-top: 16px; }
 
-.stat .v small { font-family: var(--md-sys-typescale-font); font-size: ${TYPE.labelMedium.size}px; font-weight: ${TYPE.bodyMedium.weight}; color: var(--md-sys-color-on-surface-variant); }
-.stat .note { margin-top: 5px; font-size: ${TYPE.labelMedium.size}px; letter-spacing: .06em; color: var(--md-sys-color-on-surface-variant); }
-.stat.hero { padding: 16px 18px 15px; }
-.stat.hero .v { font-size: ${TYPE.headlineLarge.size}px; }
+.grid.c5 .stat { padding: 16px 14px 16px; border-radius: var(--md-sys-shape-corner-large-increased); }
+.grid.c5 .stat .k { font-size: 15px; }
+.grid.c5 .stat .v { font-size: 32px; line-height: 40px; }
+.grid.c5 .stat .v small { font-size: 14px; }
+.grid.c5 .stat .note { font-size: 14px; }
 
-.meter { margin-top: 9px; height: 4px; border-radius: var(--md-sys-shape-corner-full); background: var(--md-sys-color-surface-container-high); }
-.meter i { display: block; height: 100%; border-radius: var(--md-sys-shape-corner-full); background: var(--tone, var(--md-sys-color-primary)); }
+/* ---------- 比例条：填充与轨道是两块全圆角色块，中间留 4px 空隙 ---------- */
+.track { display: flex; gap: 4px; width: 100%; height: 8px; }
+.track i { display: block; height: 100%; border-radius: var(--md-sys-shape-corner-full); }
+.track .fill { min-width: 8px; background: var(--tone, var(--md-sys-color-primary)); }
+.track .rest { background: var(--track-bg, var(--md-sys-color-surface-container-highest)); }
 
-/* ---------- 帐册（表格） ---------- */
-table.ledger {
-    width: 100%;
-    border-collapse: collapse;
-    font-variant-numeric: tabular-nums;
-}
+/* ---------- 分段列表：每行一块圆角容器，行间 4px，不画分隔线 ---------- */
+table.ledger { width: 100%; border-collapse: separate; border-spacing: 0 4px; margin: -4px 0; }
 
-.ledger thead th {
-    padding: 9px 10px;
-    font-size: ${TYPE.labelMedium.size}px;
+.ledger th {
+    padding: 8px 14px 6px;
+    font-size: 15px;
+    line-height: 20px;
     font-weight: ${EMPHASIZED_WEIGHT.label};
-    letter-spacing: .16em;
     color: var(--md-sys-color-on-surface-variant);
     text-align: center;
-    border-top: 2px solid var(--md-sys-color-on-surface);
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
 }
 
-.ledger tbody td {
-    padding: 10px;
-    font-size: ${TYPE.bodyLarge.size}px;
-    color: var(--md-sys-color-on-surface-variant);
+.ledger td {
+    --track-bg: var(--md-sys-color-surface-container-highest);
+    height: 52px;
+    padding: 0 14px;
+    background: var(--md-sys-color-surface-container-low);
+    color: var(--md-sys-color-on-surface);
+    font-size: 18px;
+    line-height: 26px;
     text-align: center;
-    border-bottom: 1px solid var(--md-sys-color-surface-container-high);
+    vertical-align: middle;
+}
+.ledger td:first-child { border-radius: var(--md-sys-shape-corner-large) 0 0 var(--md-sys-shape-corner-large); }
+.ledger td:last-child { border-radius: 0 var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) 0; }
+.ledger th.l, .ledger td.l { text-align: left; }
+.ledger td.idx { font-size: 17px; font-weight: ${EMPHASIZED_WEIGHT.label}; color: var(--md-sys-color-on-surface-variant); }
+
+.ledger tr.self td {
+    --track-bg: rgba(255, 255, 255, .6);
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
 }
 
-.ledger tbody tr:nth-child(even) { background: var(--md-sys-color-surface-container-low); }
-.ledger tbody tr:last-child td { border-bottom: 1px solid var(--md-sys-color-on-surface); }
-.ledger td.idx { font-family: var(--md-sys-typescale-font-mono); font-size: ${TYPE.labelLarge.size}px; color: var(--md-sys-color-on-surface-variant); font-variant-numeric: tabular-nums; }
-.ledger thead th.l { text-align: left; padding-left: 18px; }
-.ledger td.name { text-align: left; padding-left: 18px; font-size: ${TYPE.bodyLarge.size}px; letter-spacing: .03em; color: var(--md-sys-color-on-surface); }
-.ledger td.num { font-family: var(--md-sys-typescale-font-mono); font-size: ${TYPE.titleMedium.size}px; font-weight: ${EMPHASIZED_WEIGHT.title}; color: var(--md-sys-color-on-surface); font-variant-numeric: tabular-nums; }
-.ledger td.num small { font-family: var(--md-sys-typescale-font); font-size: ${TYPE.labelMedium.size}px; font-weight: ${TYPE.bodyMedium.weight}; color: var(--md-sys-color-on-surface-variant); margin-left: 3px; }
-.ledger tr.self td { background: var(--md-sys-color-surface-container-high); }
+/* 条形榜：名次、名字、条、数。名字列随最长的名字撑开，条列吃掉剩下的宽度，条的起点对齐 */
+.bars td.no { min-width: 48px; padding: 0 8px 0 14px; text-align: right; font-size: 17px; font-weight: ${EMPHASIZED_WEIGHT.label}; color: var(--md-sys-color-on-surface-variant); }
+.bars tr.self td.no { color: var(--md-sys-color-on-secondary-container); }
+.bars td.name { padding: 0 8px 0 4px; text-align: left; white-space: nowrap; font-weight: 500; }
+.bars td.bar { width: 100%; padding: 0 16px 0 14px; }
+.bars td.val { padding: 0 18px 0 0; text-align: right; white-space: nowrap; font-size: 22px; font-weight: ${EMPHASIZED_WEIGHT.title}; }
+.bars td.val small { margin-left: 4px; font-size: 15px; font-weight: 500; color: var(--md-sys-color-on-surface-variant); }
+.bars tr.self td.val small { color: var(--md-sys-color-on-secondary-container); }
+.bars td.pct { width: 64px; padding: 0 18px 0 0; text-align: right; font-size: 16px; color: var(--md-sys-color-on-surface-variant); }
+
+.me-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    margin-left: 8px;
+    padding: 0 8px;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    font-size: 14px;
+    font-style: normal;
+    font-weight: ${EMPHASIZED_WEIGHT.label};
+    vertical-align: middle;
+}
+
+/* 名次章：金银铜底色与前景由组件的 m3-badge--* 提供 */
+.medal { width: 32px; height: 32px; font-size: 16px; }
 
 /* ---------- 标签 ---------- */
 .chip {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
     border-radius: var(--md-sys-shape-corner-full);
-    font-size: ${TYPE.labelLarge.size}px;
-    line-height: 1.55;
-    color: var(--tone, var(--md-sys-color-on-surface-variant));
-    background: var(--tone-soft, var(--md-sys-color-surface-container));
-}
-
-.chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.chip.ghost { background: transparent; color: var(--md-sys-color-on-surface-variant); }
-
-/* ---------- 名次 ---------- */
-/* 章面尺寸沿用帐册的节奏；金银铜底色与白字由组件的 m3-badge--* 提供 */
-.medal {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 25px;
-    min-width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    font-family: var(--md-sys-typescale-font-mono);
-    font-size: ${TYPE.labelMedium.size}px;
+    background: var(--tone-container, var(--md-sys-color-surface-container-highest));
+    color: var(--on-tone, var(--md-sys-color-on-surface));
+    font-size: 16px;
+    line-height: 1;
     font-weight: ${EMPHASIZED_WEIGHT.label};
-    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    vertical-align: middle;
 }
+.chip.t-ink { background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface); }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
+.chip.ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--md-sys-color-outline-variant); color: var(--md-sys-color-on-surface-variant); font-weight: 500; }
 
-/* ---------- 条形榜 ---------- */
-.bars { margin-top: 2px; }
-
-.bar-row {
-    display: grid;
-    grid-template-columns: 24px 84px 1fr 104px;
-    align-items: center;
-    gap: 12px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--md-sys-color-surface-container-high);
+/* ---------- 空态 ---------- */
+.empty {
+    padding: 44px 24px;
+    border-radius: var(--md-sys-shape-corner-extra-large);
+    background: var(--md-sys-color-surface-container-low);
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 17px;
+    line-height: 30px;
+    text-align: center;
 }
-
-.bar-row:last-child { border-bottom: 0; }
-.bar-row .no { font-family: var(--md-sys-typescale-font-mono); font-size: ${TYPE.labelMedium.size}px; color: var(--md-sys-color-on-surface-variant); text-align: right; font-variant-numeric: tabular-nums; }
-.bar-row .rname { font-size: ${TYPE.bodyLarge.size}px; letter-spacing: .05em; color: var(--md-sys-color-on-surface); text-align: right; }
-.bar-row .track { position: relative; height: 14px; border-radius: var(--md-sys-shape-corner-full); overflow: hidden; background: var(--md-sys-color-surface-container-high); }
-.bar-row .track i { position: absolute; left: 0; top: 0; bottom: 0; min-width: 2px; background: linear-gradient(90deg, var(--tone-soft), var(--tone)); }
-.bar-row .val { font-family: var(--md-sys-typescale-font-mono); font-size: ${TYPE.bodyMedium.size}px; color: var(--md-sys-color-on-surface-variant); font-variant-numeric: tabular-nums; }
-.bar-row .val em { margin-left: 7px; font-style: normal; font-family: var(--md-sys-typescale-font-mono); font-size: ${TYPE.labelMedium.size}px; color: var(--md-sys-color-on-surface-variant); }
+.empty b { display: block; margin-bottom: 4px; font-size: 22px; line-height: 30px; color: var(--md-sys-color-on-surface); }
 
 /* ---------- 版记 ---------- */
 .colophon {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-top: 24px;
-    padding-top: 11px;
+    align-items: baseline;
+    gap: 16px;
+    margin-top: 36px;
+    padding-top: 16px;
     border-top: 1px solid var(--md-sys-color-outline-variant);
-    font-size: ${TYPE.labelSmall.size}px;
-    letter-spacing: .16em;
+    font-size: 14px;
+    line-height: 20px;
     color: var(--md-sys-color-on-surface-variant);
 }
-
-.colophon .r { letter-spacing: .06em; }
+.colophon .l { letter-spacing: .12em; }
 `;
 
 /** 用户可控文本一律转为全角，避免破坏版面（h.unescape 之后仍然安全）。 */
@@ -487,13 +460,11 @@ function esc(value: unknown): string {
   );
 }
 
-/** 朱印：四字作两列两行（自右向左），二字作一列。 */
+/** 朱印：两个字，竖排。 */
 function sealMarkup(text?: string): string {
   if (!text) return "";
-  const chars = [...text];
-  const shape = chars.length >= 4 ? "four" : "two";
-  return `<div class="seal ${shape}">${chars
-    .slice(0, 4)
+  return `<div class="seal" aria-hidden="true">${[...text]
+    .slice(0, 2)
     .map((c) => `<span>${c}</span>`)
     .join("")}</div>`;
 }
@@ -503,6 +474,8 @@ interface PageOptions {
   title: string;
   eyebrow?: string;
   subtitle?: string;
+  /** 题头下的一排标签（已拼好的 HTML）。 */
+  tags?: string;
   seal?: string;
   body: string;
   colophonLeft?: string;
@@ -512,7 +485,7 @@ interface PageOptions {
   script?: string;
 }
 
-/** 统一的页面骨架：纸张、内框、四角、题头、版记。 */
+/** 统一的页面骨架：纸张、题头、版记。 */
 function buildPage(o: PageOptions): string {
   return `<!DOCTYPE html>
 <html lang="zh">
@@ -526,16 +499,18 @@ ${o.head ?? ""}
 <body>
 <div class="sheet">
     <header class="masthead">
+        <div class="text">
+            <p class="eyebrow">${o.eyebrow ?? "投胎模拟器"}</p>
+            <h1 class="title">${o.title}</h1>
+            ${o.subtitle ? `<p class="subtitle">${o.subtitle}</p>` : ""}
+            ${o.tags ? `<div class="tags">${o.tags}</div>` : ""}
+        </div>
         ${sealMarkup(o.seal)}
-        <p class="eyebrow">${o.eyebrow ?? "投 胎 模 拟 器"}</p>
-        <h1 class="title">${o.title}</h1>
-        ${o.subtitle ? `<p class="subtitle">${o.subtitle}</p>` : ""}
-        <div class="divider"><i></i><b>❖</b><i></i></div>
     </header>
     ${o.body}
     <footer class="colophon">
-        <span>${o.colophonLeft ?? "轮 回 簿"}</span>
-        <span class="r">${o.colophonRight ?? ""}</span>
+        <span class="l">${o.colophonLeft ?? "轮回簿"}</span>
+        <span>${o.colophonRight ?? ""}</span>
     </footer>
 </div>
 ${o.script ?? ""}
@@ -543,17 +518,28 @@ ${o.script ?? ""}
 </html>`;
 }
 
+/** 题头副标题：「命主 某某 · 一句话」。 */
+function subtitleOf(username: string, rest: string): string {
+  return `命主 <b>${esc(username)}</b><span class="sep">·</span>${rest}`;
+}
+
 /** 分栏标题。 */
 function section(title: string, body: string, aside = ""): string {
   return `<section class="section">
     <div class="sec-hd">
-        <span class="mark"></span>
         <h2>${title}</h2>
-        <span class="fill m3-divider"></span>
         ${aside ? `<span class="aside">${aside}</span>` : ""}
     </div>
     ${body}
 </section>`;
+}
+
+/** 比例条：ratio 取 0～1；超出收进范围，非数按 0。 */
+function track(ratio: number): string {
+  const r = Number.isFinite(ratio) ? Math.min(1, Math.max(0, ratio)) : 0;
+  const fill = r > 0 ? `<i class="fill" style="flex: ${r.toFixed(4)} 1 0"></i>` : "";
+  const rest = r < 1 ? `<i class="rest" style="flex: ${(1 - r).toFixed(4)} 1 0"></i>` : "";
+  return `<span class="track">${fill}${rest}</span>`;
 }
 
 interface StatOptions {
@@ -566,27 +552,20 @@ interface StatOptions {
   hero?: boolean;
 }
 
-/** 数据卡：标签、数值、注脚，可选底部比例细线。 */
+/** 数据卡：标签、数值、注脚，可选底部比例条（总是贴着卡片底边，同一排的卡片条对齐）。 */
 function statCard(o: StatOptions): string {
-  const meter =
-    o.ratio === undefined
-      ? ""
-      : `<div class="meter"><i style="width: ${clampPercent(o.ratio)}%"></i></div>`;
+  // 数字用大字，省名这类文字值缩一档，免得撑破卡片
+  const numeric = /^[\d.,]+%?$/.test(String(o.value));
   return `<div class="stat t-${o.tone ?? "ink"}${o.hero ? " hero" : ""}">
     <span class="k">${o.label}</span>
-    <span class="v">${o.value}${o.unit ? `<small>${o.unit}</small>` : ""}</span>
-    ${o.note ? `<div class="note">${o.note}</div>` : ""}
-    ${meter}
+    <span class="v${numeric ? "" : " text"}">${o.value}${o.unit ? `<small>${o.unit}</small>` : ""}</span>
+    ${o.note ? `<span class="note">${o.note}</span>` : ""}
+    ${o.ratio === undefined ? "" : `<div class="meter">${track(o.ratio)}</div>`}
 </div>`;
 }
 
 function chip(text: string, tone: Tone = "ink", withDot = false): string {
   return `<span class="chip t-${tone}">${withDot ? `<i class="dot"></i>` : ""}${text}</span>`;
-}
-
-function clampPercent(ratio: number): string {
-  if (!Number.isFinite(ratio) || ratio <= 0) return "0";
-  return (Math.min(1, ratio) * 100).toFixed(2);
 }
 
 /** 百分比文本，保留一位小数且去掉多余的 .0。 */
@@ -596,6 +575,7 @@ function percentText(count: number, total: number): string {
   const text = value >= 10 ? value.toFixed(0) : value.toFixed(1);
   return `${text.replace(/\.0$/, "")}%`;
 }
+
 
 /* ------------------------------------------------------------------ *
  *  文本消息
@@ -687,7 +667,52 @@ function trimUsername(username: string): string {
   }
 }
 
-/** 性别分布：手绘 SVG 环图，不依赖任何外部图表库。 */
+/**
+ * 环图：段与段之间留缝、两端圆头（M3 新版进度环的样子）。
+ * 圆头会向两端各多出半个线宽，所以每段的实线长度要减去「缝 + 线宽」。
+ * 某一段太短放不下圆头时，整圈退回平头加细缝；只有一段时画整圈。
+ */
+function donut(
+  parts: { value: number; color: string }[],
+  center: string,
+  caption: string,
+): string {
+  const R = 78;
+  const W = 26;
+  const C = 2 * Math.PI * R;
+  const total = parts.reduce((sum, part) => sum + part.value, 0);
+  const live = total > 0 ? parts.filter((part) => part.value > 0) : [];
+  const round =
+    live.length > 1 && live.every((part) => (part.value / total) * C - 8 - W > 4);
+
+  let cursor = 0;
+  const arcs = live
+    .map((part) => {
+      if (live.length === 1) {
+        return `<circle cx="100" cy="100" r="${R}" fill="none" stroke="${part.color}" stroke-width="${W}"></circle>`;
+      }
+      const span = (part.value / total) * C;
+      const gap = round ? 8 : 3;
+      const cap = round ? W : 0;
+      const dash = span - gap - cap;
+      const start = cursor + gap / 2 + cap / 2;
+      cursor += span;
+      return `<circle cx="100" cy="100" r="${R}" fill="none" stroke="${part.color}" stroke-width="${W}"
+            stroke-linecap="${round ? "round" : "butt"}"
+            stroke-dasharray="${dash.toFixed(2)} ${(C - dash).toFixed(2)}" stroke-dashoffset="${(-start).toFixed(2)}"></circle>`;
+    })
+    .join("");
+
+  return `<div class="donut">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="${R}" fill="none" stroke="${SCHEME.surfaceContainerHigh}" stroke-width="${W}"></circle>
+        <g transform="rotate(-90 100 100)">${arcs}</g>
+    </svg>
+    <div class="c"><b>${center}</b><span>${caption}</span></div>
+</div>`;
+}
+
+/** 性别分布：环图加两张数据卡。 */
 function renderGenderDistribution(
   username: string,
   birthResultsInChina: BirthResultInChina[],
@@ -695,29 +720,21 @@ function renderGenderDistribution(
   const total = birthResultsInChina.length;
   const male = birthResultsInChina.filter((r) => r.gender === "male").length;
   const female = total - male;
-
-  const circumference = 2 * Math.PI * 62;
-  const maleArc = total ? (male / total) * circumference : 0;
   const ratio = female ? (male / female).toFixed(2) : "—";
 
   const body = `
-<div class="donut-wrap">
-    <svg class="donut" viewBox="0 0 160 160" width="228" height="228">
-        <circle cx="80" cy="80" r="74" fill="none" stroke="${SCHEME.outlineVariant}" stroke-width="1"></circle>
-        <circle cx="80" cy="80" r="62" fill="none" stroke="${SCHEME.surfaceContainerHigh}" stroke-width="19"></circle>
-        <g transform="rotate(-90 80 80)">
-            <circle cx="80" cy="80" r="62" fill="none" stroke="${lch(48, 44, TONES.azure)}" stroke-width="19"
-                    stroke-dasharray="${maleArc.toFixed(2)} ${(circumference - maleArc).toFixed(2)}"></circle>
-            <circle cx="80" cy="80" r="62" fill="none" stroke="${lch(48, 44, TONES.rose)}" stroke-width="19"
-                    stroke-dasharray="${(circumference - maleArc).toFixed(2)} ${maleArc.toFixed(2)}"
-                    stroke-dashoffset="${(-maleArc).toFixed(2)}"></circle>
-        </g>
-        <text class="donut-num" x="80" y="80" text-anchor="middle">${total}</text>
-        <text class="donut-cap" x="80" y="100" text-anchor="middle">次 降 生</text>
-    </svg>
-    <div class="donut-side">
+<div class="gender">
+    ${donut(
+      [
+        { value: male, color: toneRoles("azure").solid },
+        { value: female, color: toneRoles("rose").solid },
+      ],
+      String(total),
+      "次降生",
+    )}
+    <div class="gender-side">
         ${statCard({
-          label: "男 孩",
+          label: "男孩",
           value: male,
           unit: "次",
           tone: "azure",
@@ -725,32 +742,34 @@ function renderGenderDistribution(
           ratio: total ? male / total : 0,
         })}
         ${statCard({
-          label: "女 孩",
+          label: "女孩",
           value: female,
           unit: "次",
           tone: "rose",
           note: `占 ${percentText(female, total)}`,
           ratio: total ? female / total : 0,
         })}
-        <div class="ratio-note">性别比　男 <b>${ratio}</b> ： 女 <b>1.00</b></div>
+        <p class="ratio">性别比　男 <b>${ratio}</b> ： 女 <b>1.00</b></p>
     </div>
 </div>`;
 
   return buildPage({
     docTitle: "中国投胎性别分布",
     title: "中国投胎 · 性别分布",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>阴阳各半，皆是缘法`,
+    subtitle: subtitleOf(username, "阴阳各半，皆是缘法"),
     seal: "阴阳",
-    body: section("男 女 之 数", body, `合计 ${total} 次`),
+    body: section("男女之数", body, `合计 ${total} 次`),
     colophonRight: `男 ${male} · 女 ${female}`,
     style: `
-.donut-wrap { display: flex; align-items: center; gap: 34px; }
-.donut { flex: none; }
-.donut-num { font-family: var(--md-sys-typescale-font-mono); font-size: ${TYPE.displaySmall.size}px; font-weight: ${EMPHASIZED_WEIGHT.display}; fill: var(--md-sys-color-on-surface); font-variant-numeric: tabular-nums; }
-.donut-cap { font-family: var(--md-sys-typescale-font); font-size: ${TYPE.labelSmall.size}px; letter-spacing: .3em; fill: var(--md-sys-color-on-surface-variant); }
-.donut-side { flex: 1; display: flex; flex-direction: column; gap: 12px; }
-.ratio-note { padding-top: 2px; font-size: ${TYPE.labelMedium.size}px; letter-spacing: .1em; color: var(--md-sys-color-on-surface-variant); text-align: center; }
-.ratio-note b { font-family: var(--md-sys-typescale-font-mono); font-size: ${TYPE.bodyLarge.size}px; color: var(--md-sys-color-on-surface-variant); font-variant-numeric: tabular-nums; }
+.gender { display: flex; align-items: center; gap: 32px; }
+.donut { position: relative; flex: none; width: 248px; height: 248px; }
+.donut svg { display: block; width: 100%; height: 100%; }
+.donut .c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.donut .c b { font-size: 56px; line-height: 60px; font-weight: ${EMPHASIZED_WEIGHT.display}; letter-spacing: -.01em; }
+.donut .c span { font-size: 16px; line-height: 22px; color: var(--md-sys-color-on-surface-variant); }
+.gender-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.ratio { margin: 4px 0 0; text-align: center; font-size: 16px; line-height: 24px; color: var(--md-sys-color-on-surface-variant); }
+.ratio b { font-size: 20px; font-weight: ${EMPHASIZED_WEIGHT.title}; color: var(--md-sys-color-on-surface); }
 `,
   });
 }
@@ -766,12 +785,15 @@ interface RankingOptions {
   tip: string;
 }
 
-/** 排行榜的计分与排序：图与文本兜底共用这一份，两条通道的名次才对得上。 */
-function rankRows(
+/**
+ * 排行榜的计分与排序：图与文本兜底共用这一份，两条通道的名次才对得上。
+ * 并列同名次（1、1、3）：与总览里「第 N 位」的算法一致，奖牌也跟着并列走。
+ */
+export function rankRows(
   toutaiRecords: ToutaiRecord[],
   pick: (record: ToutaiRecord) => number,
-): { userId: string; username: string; value: number }[] {
-  return toutaiRecords
+): { userId: string; username: string; value: number; rank: number }[] {
+  const sorted = toutaiRecords
     .map((record) => ({
       userId: record.userId,
       username: record.username,
@@ -779,6 +801,12 @@ function rankRows(
     }))
     .filter((row) => row.value > 0)
     .sort((a, b) => b.value - a.value);
+
+  let rank = 0;
+  return sorted.map((row, index) => {
+    if (index === 0 || row.value !== sorted[index - 1].value) rank = index + 1;
+    return { ...row, rank };
+  });
 }
 
 /**
@@ -804,59 +832,44 @@ function renderRankings(
   const rows = scored.slice(0, count);
   const top = rows[0]?.value ?? 1;
   const selfRank =
-    scored.findIndex((row) => row.userId === options.selfUserId) + 1;
+    scored.find((row) => row.userId === options.selfUserId)?.rank ?? 0;
 
   const list = rows
-    .map((row, index) => {
+    .map((row) => {
       const isSelf = row.userId === options.selfUserId;
-      return `<div class="bar-row rank t-${index < 3 ? "gold" : options.tone}${isSelf ? " me" : ""}">
-    <span class="no">${medal(index + 1)}</span>
-    <span class="rname">${esc(trimUsername(row.username))}${isSelf ? `<i class="me-tag">你</i>` : ""}</span>
-    <span class="track"><i style="width: ${clampPercent(row.value / top)}%"></i></span>
-    <span class="val">${row.value}<em>${options.valueLabel}</em></span>
-</div>`;
+      return `<tr class="t-${options.tone}${isSelf ? " self" : ""}">
+    <td class="no">${medal(row.rank)}</td>
+    <td class="name">${esc(trimUsername(row.username))}${isSelf ? `<i class="me-tag">你</i>` : ""}</td>
+    <td class="bar">${track(row.value / top)}</td>
+    <td class="val">${row.value}<small>${options.valueLabel}</small></td>
+</tr>`;
     })
     .join("");
 
   return buildPage({
     docTitle: options.title,
     title: options.title,
-    subtitle: `列位共 ${scored.length} 人<span class="sep">❖</span>${
-      selfRank > 0 ? `阁下位居第 ${selfRank}` : "阁下尚未上榜"
-    }`,
+    subtitle: subtitleLine(
+      `列位共 ${scored.length} 人`,
+      selfRank > 0 ? `阁下位居第 ${selfRank}` : "阁下尚未上榜",
+    ),
     seal: options.seal,
     body: section(
-      "名 次 录",
-      `<div class="bars">${
-        rows.length
-          ? list
-          : `<div class="empty">榜上无名 —— 尚无人在此留下痕迹。<br>发送「${options.tip}」走出第一个名字。</div>`
-      }</div>`,
+      "名次录",
+      rows.length
+        ? `<table class="ledger bars"><tbody>${list}</tbody></table>`
+        : `<div class="empty"><b>榜上无名</b>尚无人在此留下痕迹。<br>发送「${options.tip}」走出第一个名字。</div>`,
       rows.length ? `前 ${rows.length} 位` : "",
     ),
     colophonRight: rows.length
       ? `榜首 ${esc(trimUsername(rows[0].username))} · ${rows[0].value} ${options.valueLabel}`
       : "虚位以待",
-    style: `
-.bar-row.rank { grid-template-columns: 28px 1fr 190px 96px; }
-.bar-row.rank .rname { text-align: left; font-size: ${TYPE.bodyLarge.size}px; }
-.bar-row.rank .val { text-align: right; font-family: var(--md-sys-typescale-font-mono); font-size: ${TYPE.titleMedium.size}px; font-weight: ${EMPHASIZED_WEIGHT.title}; color: var(--md-sys-color-on-surface); font-variant-numeric: tabular-nums; }
-.bar-row.rank .val em { font-family: var(--md-sys-typescale-font-mono); font-weight: ${TYPE.bodyMedium.weight}; }
-.bar-row.me { background: var(--md-sys-color-surface-container); border-radius: var(--md-sys-shape-corner-medium); }
-.me-tag {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 1px 7px;
-    border: 1px solid var(--md-sys-color-tertiary);
-    border-radius: var(--md-sys-shape-corner-extra-small);
-    font-size: ${TYPE.labelSmall.size}px;
-    font-style: normal;
-    letter-spacing: .1em;
-    color: var(--md-sys-color-tertiary);
-}
-.empty { padding: 26px 0; text-align: center; font-size: ${TYPE.bodyMedium.size}px; letter-spacing: .1em; color: var(--md-sys-color-on-surface-variant); }
-`,
   });
+}
+
+/** 不带「命主」前缀的副标题：几段话用间隔点连起来。 */
+function subtitleLine(...parts: string[]): string {
+  return parts.join(`<span class="sep">·</span>`);
 }
 
 /** 各省降生次数，从多到少。图与文本兜底共用。 */
@@ -870,6 +883,23 @@ function provinceCounts(
   return Object.entries(counts).sort((a, b) => b[1] - a[1]);
 }
 
+/** 分布条形表的一行：序号、名称、比例条、次数、占比。 */
+function distributionRow(
+  index: number,
+  name: string,
+  count: number,
+  top: number,
+  total: number,
+): string {
+  return `<tr class="t-ink">
+    <td class="no">${index}</td>
+    <td class="name">${name}</td>
+    <td class="bar">${track(top ? count / top : 0)}</td>
+    <td class="val">${count}<small>次</small></td>
+    <td class="pct">${percentText(count, total)}</td>
+</tr>`;
+}
+
 /** 地区分布：省份条形榜。 */
 function renderRegionDistribution(
   username: string,
@@ -880,24 +910,19 @@ function renderRegionDistribution(
   const top = sorted[0]?.[1] ?? 1;
 
   const bars = sorted
-    .map(
-      ([province, count], index) => `<div class="bar-row t-${count === top ? "cinnabar" : "azure"}">
-    <span class="no">${index + 1}</span>
-    <span class="rname">${province}</span>
-    <span class="track"><i style="width: ${clampPercent(count / top)}%"></i></span>
-    <span class="val">${count} 次<em>${percentText(count, total)}</em></span>
-</div>`,
+    .map(([province, count], index) =>
+      distributionRow(index + 1, province, count, top, total),
     )
     .join("");
 
   return buildPage({
     docTitle: "中国投胎地区分布",
     title: "中国投胎 · 地区分布",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>足迹遍及 ${sorted.length} 省`,
+    subtitle: subtitleOf(username, `足迹遍及 ${sorted.length} 省`),
     seal: "山河",
     body: section(
-      "省 份 之 分",
-      `<div class="bars">${bars}</div>`,
+      "省份之分",
+      `<table class="ledger bars"><tbody>${bars}</tbody></table>`,
       `共 ${total} 次 · 最常降生于 ${sorted[0]?.[0] ?? "—"}`,
     ),
     colophonRight: `${sorted.length} 省 · ${total} 次`,
@@ -913,8 +938,8 @@ function renderWorldDemiseHistory(
     .map(
       (record) => `<tr>
     <td class="idx">${record.index}</td>
-    <td>${chip(record.dictContinent, "ink")}</td>
-    <td class="name">${record.dictName}</td>
+    <td>${chip(record.dictContinent, "cinnabar")}</td>
+    <td class="l">${record.dictName}</td>
 </tr>`,
     )
     .join("");
@@ -922,22 +947,18 @@ function renderWorldDemiseHistory(
   return buildPage({
     docTitle: "世界投胎夭折历史",
     title: "世界投胎 · 夭折历史",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>未及睁眼，已别人间`,
+    subtitle: subtitleOf(username, "未及睁眼，已别人间"),
     seal: "长夜",
     body: section(
-      "殁 者 名 录",
-      `<table class="ledger mourning">
-    <thead><tr><th width="22%">次 第</th><th width="34%">大 洲</th><th class="l" width="44%">国 度</th></tr></thead>
+      "殁者名录",
+      `<table class="ledger">
+    <thead><tr><th width="22%">次第</th><th width="34%">大洲</th><th class="l" width="44%">国度</th></tr></thead>
     <tbody>${rows}</tbody>
 </table>`,
       `近 ${unfortunateDemiseRecordsInWorld.length} 笔`,
     ),
-    colophonLeft: "轮 回 簿 · 殁",
+    colophonLeft: "轮回簿 · 殁",
     colophonRight: "愿来世安稳",
-    style: `
-.ledger.mourning thead th { border-top-color: var(--md-sys-color-tertiary); }
-.ledger.mourning td.name { color: var(--md-sys-color-on-surface-variant); }
-`,
   });
 }
 
@@ -951,7 +972,7 @@ function renderWorldBirthHistory(
       (record) => `<tr>
     <td class="idx">${record.index}</td>
     <td>${chip(record.dictContinent, "jade")}</td>
-    <td class="name">${record.dictName}</td>
+    <td class="l">${record.dictName}</td>
 </tr>`,
     )
     .join("");
@@ -959,12 +980,12 @@ function renderWorldBirthHistory(
   return buildPage({
     docTitle: "世界投胎成功历史",
     title: "世界投胎 · 降生纪年",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>山南水北，皆曾为家`,
+    subtitle: subtitleOf(username, "山南水北，皆曾为家"),
     seal: "寰宇",
     body: section(
-      "降 生 名 录",
+      "降生名录",
       `<table class="ledger">
-    <thead><tr><th width="22%">次 第</th><th width="34%">大 洲</th><th class="l" width="44%">国 度</th></tr></thead>
+    <thead><tr><th width="22%">次第</th><th width="34%">大洲</th><th class="l" width="44%">国度</th></tr></thead>
     <tbody>${rows}</tbody>
 </table>`,
       `近 ${birthResultsInWorld.length} 笔`,
@@ -987,7 +1008,7 @@ function renderChinaBirthHistory(
       record.gender === "male" ? "azure" : "rose",
       true,
     )}</td>
-    <td class="name">${record.province}</td>
+    <td>${record.province}</td>
     <td>${record.category ? chip(record.category, "ink") : "—"}</td>
     <td>${record.order ? orderText(record.order) : "—"}</td>
 </tr>`,
@@ -997,19 +1018,53 @@ function renderChinaBirthHistory(
   return buildPage({
     docTitle: "中国投胎成功历史",
     title: "中国投胎 · 降生纪年",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>一纸命簿，半生浮沉`,
+    subtitle: subtitleOf(username, "一纸命簿，半生浮沉"),
     seal: "降生",
     body: section(
-      "降 生 名 录",
+      "降生名录",
       `<table class="ledger">
-    <thead><tr><th width="14%">次 第</th><th width="17%">性 别</th><th width="25%">省 份</th><th width="22%">城 乡</th><th width="22%">胎 次</th></tr></thead>
+    <thead><tr><th width="14%">次第</th><th width="17%">性别</th><th width="25%">省份</th><th width="22%">城乡</th><th width="22%">胎次</th></tr></thead>
     <tbody>${rows}</tbody>
 </table>`,
       `近 ${birthResultsInChina.length} 笔`,
     ),
     colophonRight: "自新至旧，依序而列",
-    style: `.ledger td.name { text-align: center; padding-left: 10px; }`,
   });
+}
+
+/** 生死之数：降生 / 夭折 / 存活率三张大卡，世界与中国总览共用。 */
+function lifeAndDeathCards(
+  totalCount: number,
+  stillbirths: number,
+  userRank: number,
+  userStillbirthsRank: number,
+): string {
+  const attempts = totalCount + stillbirths;
+  return `<div class="grid c3">
+    ${statCard({
+      label: "降生",
+      value: totalCount,
+      unit: "次",
+      tone: "jade",
+      note: rankText(userRank),
+      hero: true,
+    })}
+    ${statCard({
+      label: "夭折",
+      value: stillbirths,
+      unit: "次",
+      tone: "cinnabar",
+      note: rankText(userStillbirthsRank),
+      hero: true,
+    })}
+    ${statCard({
+      label: "存活率",
+      value: percentText(totalCount, attempts),
+      tone: "gold",
+      note: `共叩门 ${attempts} 次`,
+      hero: true,
+    })}
+</div>`;
 }
 
 /** 世界投胎记录总览。 */
@@ -1023,43 +1078,18 @@ function renderWorldOverview(
   const { totalCount, dictContinentCounts, uniqueCountries, favourite } =
     analysisResult;
   const counts: { [key: string]: number } = dictContinentCounts;
-  const attempts = totalCount + numberOfStillbirths;
-
-  const hero = `<div class="grid c3">
-    ${statCard({
-      label: "降 生",
-      value: totalCount,
-      unit: "次",
-      tone: "jade",
-      note: rankText(userRank),
-      hero: true,
-    })}
-    ${statCard({
-      label: "夭 折",
-      value: numberOfStillbirths,
-      unit: "次",
-      tone: "cinnabar",
-      note: rankText(userStillbirthsRank),
-      hero: true,
-    })}
-    ${statCard({
-      label: "存 活 率",
-      value: percentText(totalCount, attempts),
-      tone: "gold",
-      note: `共叩门 ${attempts} 次`,
-      hero: true,
-    })}
-</div>`;
+  const visited = Object.values(counts).filter((value) => value > 0).length;
 
   const footprint = `<div class="grid c2">
     ${statCard({
-      label: "履 及 之 国",
+      label: "履及之国",
       value: uniqueCountries,
       unit: "国",
-      tone: "azure",
+      tone: "ink",
+      note: `遍及 ${visited} 洲`,
     })}
     ${statCard({
-      label: "最 常 降 生",
+      label: "最常降生",
       value: favourite.name || "—",
       tone: "ink",
       note: favourite.count
@@ -1068,35 +1098,33 @@ function renderWorldOverview(
     })}
 </div>`;
 
-  const continents = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([continent, count], index) => {
-      const tone = count === 0 ? "ink" : index < 3 ? "gold" : "azure";
-      const bar = count
-        ? `<i style="width: ${clampPercent(count / totalCount)}%"></i>`
-        : "";
-      return `<div class="bar-row t-${tone}">
-    <span class="no">${index + 1}</span>
-    <span class="rname">${continent}</span>
-    <span class="track">${bar}</span>
-    <span class="val">${count} 次<em>${percentText(count, totalCount)}</em></span>
-</div>`;
-    })
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const top = sorted[0]?.[1] ?? 0;
+  const continents = sorted
+    .map(([continent, count], index) =>
+      distributionRow(index + 1, continent, count, top, totalCount),
+    )
     .join("");
-
-  const visited = Object.values(counts).filter((value) => value > 0).length;
 
   return buildPage({
     docTitle: "世界投胎记录总览",
     title: "世界投胎 · 记录总览",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>七洲之内，已履 ${visited} 洲`,
+    subtitle: subtitleOf(username, `七洲之内，已履 ${visited} 洲`),
     seal: "寰宇",
     body: [
-      section("生 死 之 数", hero),
-      section("行 迹", footprint),
       section(
-        "大 洲 分 布",
-        `<div class="bars">${continents}</div>`,
+        "生死之数",
+        lifeAndDeathCards(
+          totalCount,
+          numberOfStillbirths,
+          userRank,
+          userStillbirthsRank,
+        ),
+      ),
+      section("行迹", footprint),
+      section(
+        "大洲分布",
+        `<table class="ledger bars"><tbody>${continents}</tbody></table>`,
         `共 ${totalCount} 次`,
       ),
     ].join(""),
@@ -1111,6 +1139,7 @@ function renderChinaOverview(
   userRank: number,
   userStillbirthsRank: number,
   numberOfStillbirthsInChina: number,
+  totalProvinces: number,
 ): string {
   const {
     totalCount,
@@ -1120,39 +1149,12 @@ function renderChinaOverview(
     uniqueProvinces,
     favourite,
   } = analysisResult;
-  const attempts = totalCount + numberOfStillbirthsInChina;
-
-  const hero = `<div class="grid c3">
-    ${statCard({
-      label: "降 生",
-      value: totalCount,
-      unit: "次",
-      tone: "jade",
-      note: rankText(userRank),
-      hero: true,
-    })}
-    ${statCard({
-      label: "夭 折",
-      value: numberOfStillbirthsInChina,
-      unit: "次",
-      tone: "cinnabar",
-      note: rankText(userStillbirthsRank),
-      hero: true,
-    })}
-    ${statCard({
-      label: "存 活 率",
-      value: percentText(totalCount, attempts),
-      tone: "gold",
-      note: `共叩门 ${attempts} 次`,
-      hero: true,
-    })}
-</div>`;
 
   const region = `<div class="grid c3">
     ${(["城市", "城镇", "乡村"] as const)
       .map((key) =>
         statCard({
-          label: [...key].join(" "),
+          label: key,
           value: categoryCounts[key],
           unit: "次",
           tone: "ink",
@@ -1162,26 +1164,29 @@ function renderChinaOverview(
       )
       .join("")}
 </div>
-<div class="grid c2 gap-top">
+<div class="grid c2">
     ${statCard({
-      label: "履 及 之 省",
+      label: "履及之省",
       value: uniqueProvinces,
       unit: "省",
-      tone: "gold",
+      tone: "ink",
+      note: totalProvinces ? `共 ${totalProvinces} 省 · 已踏足 ${percentText(uniqueProvinces, totalProvinces)}` : "",
+      ratio: totalProvinces ? uniqueProvinces / totalProvinces : undefined,
     })}
     ${statCard({
-      label: "最 常 降 生",
+      label: "最常降生",
       value: favourite.name || "—",
       tone: "ink",
       note: favourite.count
         ? `${favourite.count} 次 · 占 ${percentText(favourite.count, totalCount)}`
         : "",
+      ratio: totalCount ? favourite.count / totalCount : 0,
     })}
 </div>`;
 
   const gender = `<div class="grid c2">
     ${statCard({
-      label: "男 孩",
+      label: "男孩",
       value: genderCounts.male,
       unit: "次",
       tone: "azure",
@@ -1189,7 +1194,7 @@ function renderChinaOverview(
       ratio: genderCounts.male / totalCount,
     })}
     ${statCard({
-      label: "女 孩",
+      label: "女孩",
       value: genderCounts.female,
       unit: "次",
       tone: "rose",
@@ -1202,10 +1207,10 @@ function renderChinaOverview(
     ${(["一", "二", "三", "四", "五及以上"] as const)
       .map((key) =>
         statCard({
-          label: key === "五及以上" ? "五 及 以 上" : `第 ${key} 胎`,
+          label: key === "五及以上" ? "五及以上" : `第${key}胎`,
           value: orderCounts[key],
           unit: "次",
-          tone: "gold",
+          tone: "ink",
           note: percentText(orderCounts[key], totalCount),
           ratio: orderCounts[key] / totalCount,
         }),
@@ -1216,21 +1221,23 @@ function renderChinaOverview(
   return buildPage({
     docTitle: "中国投胎记录总览",
     title: "中国投胎 · 记录总览",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>生死有数，去来有痕`,
+    subtitle: subtitleOf(username, "生死有数，去来有痕"),
     seal: "命簿",
     body: [
-      section("生 死 之 数", hero),
-      section("城 乡 与 山 河", region),
-      section("男 女 之 数", gender),
-      section("胎 次", orders),
+      section(
+        "生死之数",
+        lifeAndDeathCards(
+          totalCount,
+          numberOfStillbirthsInChina,
+          userRank,
+          userStillbirthsRank,
+        ),
+      ),
+      section("城乡与山河", region),
+      section("男女之数", gender),
+      section("胎次", orders),
     ].join(""),
     colophonRight: `降生 ${totalCount} · 夭折 ${numberOfStillbirthsInChina}`,
-    style: `
-.gap-top { margin-top: 12px; }
-.grid.c5 .stat { padding: 12px 12px 11px; }
-.grid.c5 .stat .k { font-size: ${TYPE.labelSmall.size}px; letter-spacing: .08em; }
-.grid.c5 .stat .v { font-size: ${TYPE.titleLarge.size}px; }
-`,
   });
 }
 
@@ -1271,47 +1278,50 @@ function renderFirstAppearance(
   const provinces = provinceFirstAppearances(birthResultsInChina);
   const earliest = earliestAppearance;
 
-  const cell = (value: number | null, gender: "male" | "female") =>
+  // 列头已经写明男孩 / 女孩，格子里只写次序，颜色与列头一一对应
+  const cell = (value: number | null, tone: Tone) =>
     value === null
-      ? `<span class="chip ghost">未 逢</span>`
-      : chip(
-          `${translateGender(gender)} · 第 ${value} 次`,
-          gender === "male" ? "azure" : "rose",
-          true,
-        );
+      ? `<span class="chip ghost">未逢</span>`
+      : chip(`第 ${value} 次`, tone, true);
 
   const rows = provinces
     .map(
       ([province, entry]) => `<tr>
     <td class="idx">${Number.isFinite(earliest(entry)) ? earliest(entry) : "—"}</td>
-    <td class="name">${province}</td>
-    <td>${cell(entry.male, "male")}</td>
-    <td>${cell(entry.female, "female")}</td>
+    <td>${province}</td>
+    <td>${cell(entry.male, "azure")}</td>
+    <td>${cell(entry.female, "rose")}</td>
 </tr>`,
     )
     .join("");
 
   const unlocked = provinces.length;
+  const remaining = Math.max(0, totalProvinceCount - unlocked);
 
   return buildPage({
     docTitle: "中国投胎第一次出现",
     title: "中国投胎 · 初见图鉴",
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>已踏足 ${unlocked} / ${totalProvinceCount} 省`,
+    subtitle: subtitleOf(username, `已踏足 ${unlocked} / ${totalProvinceCount} 省`),
     seal: "初见",
     body: section(
-      "初 见 之 序",
-      `<div class="progress"><i style="width: ${clampPercent(unlocked / totalProvinceCount)}%"></i></div>
-<table class="ledger">
-    <thead><tr><th width="14%">初 见</th><th width="26%">省 份</th><th width="30%">男 孩</th><th width="30%">女 孩</th></tr></thead>
+      "初见之序",
+      `<div class="grid c1">${statCard({
+        label: "图鉴进度",
+        value: unlocked,
+        unit: `/ ${totalProvinceCount} 省`,
+        tone: "jade",
+        note: remaining ? `尚余 ${remaining} 省未至` : "三十四省，尽数踏遍",
+        ratio: totalProvinceCount ? unlocked / totalProvinceCount : 0,
+      })}</div>
+<table class="ledger dex">
+    <thead><tr><th width="16%">初见</th><th width="24%">省份</th><th width="30%">男孩</th><th width="30%">女孩</th></tr></thead>
     <tbody>${rows}</tbody>
 </table>`,
-      `尚余 ${Math.max(0, totalProvinceCount - unlocked)} 省未至`,
     ),
     colophonRight: `${unlocked} / ${totalProvinceCount}`,
     style: `
-.progress { height: 4px; margin-bottom: 16px; border-radius: var(--md-sys-shape-corner-full); background: var(--md-sys-color-surface-container-high); }
-.progress i { display: block; height: 100%; border-radius: var(--md-sys-shape-corner-full); background: var(--md-sys-color-primary); }
-.ledger td.name { text-align: center; padding-left: 10px; letter-spacing: .08em; }
+.grid.c1 { grid-template-columns: 1fr; margin-bottom: 20px; }
+.grid.c1 .stat .v { font-size: 48px; }
 `,
   });
 }
@@ -1319,8 +1329,10 @@ function renderFirstAppearance(
 /** 地图专用版式：题头 + 图版 + 图例带。 */
 function buildMapPage(o: {
   docTitle: string;
+  eyebrow: string;
   title: string;
   subtitle: string;
+  tags?: string;
   seal: string;
   chartHeight: number;
   legend: string;
@@ -1329,8 +1341,10 @@ function buildMapPage(o: {
 }): string {
   return buildPage({
     docTitle: o.docTitle,
+    eyebrow: o.eyebrow,
     title: o.title,
     subtitle: o.subtitle,
+    tags: o.tags,
     seal: o.seal,
     body: `<div class="plate"><div id="map" role="img" aria-label="${esc(o.docTitle + ": " + o.title)}" style="width: 100%; height: ${o.chartHeight}px;"></div></div>
 <div class="legend">${o.legend}</div>`,
@@ -1338,72 +1352,75 @@ function buildMapPage(o: {
     head: `<script src="${ECHARTS_CDN}"></script>`,
     script: `<script>${o.script}</script>`,
     style: `
-${baseline(MAP_SCHEME)}
-.masthead { padding-right: 0; }
-.masthead .seal {
-    position: static;
-    display: inline-flex;
-    width: auto;
-    height: auto;
-    gap: 0;
-    padding: ${SPACING.sm}px ${SPACING.lg}px;
-    margin-bottom: ${SPACING.lg}px;
-    direction: ltr;
-    transform: none;
-    opacity: 1;
-    border: 0;
-    border-radius: var(--md-sys-shape-corner-full);
-    background: var(--md-sys-color-primary-container);
-    color: var(--md-sys-color-on-primary-container);
-    font-size: ${TYPE.labelLarge.size}px;
-}
-.divider { display: none; }
-.plate {
-    padding: ${SPACING.sm}px;
-    background: ${MAP_COLORS.water};
-    border-radius: var(--md-sys-shape-corner-large);
-    overflow: hidden;
-}
+.plate { border-radius: var(--md-sys-shape-corner-extra-large); overflow: hidden; background: ${MAP_COLORS.water}; }
 .legend {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: ${SPACING.md}px;
-    margin-top: ${SPACING.lg}px;
-    font-size: ${TYPE.labelMedium.size}px;
+    gap: 12px 20px;
+    margin-top: 20px;
+    font-size: 16px;
+    line-height: 24px;
     color: var(--md-sys-color-on-surface-variant);
 }
-.legend .ramp { width: 88px; height: 12px; border-radius: var(--md-sys-shape-corner-full); background: linear-gradient(90deg, ${HEAT_RAMP}); }
+.legend .key {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 16px 0 12px;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: ${MAP_COLORS.selected};
+    color: ${MAP_COLORS.onSelected};
+    font-weight: ${EMPHASIZED_WEIGHT.label};
+}
+.legend .scale { display: inline-flex; align-items: center; gap: 10px; }
+.legend .ramp { width: 96px; height: 12px; border-radius: var(--md-sys-shape-corner-full); background: linear-gradient(90deg, ${HEAT_RAMP}); box-shadow: inset 0 0 0 1px ${MAP_COLORS.boundary}; }
 .legend .spacer { flex: 1; }
-.legend .key { display: inline-flex; align-items: center; gap: ${SPACING.sm}px; padding: ${SPACING.sm}px ${SPACING.md}px; border-radius: var(--md-sys-shape-corner-full); background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
-.legend .key i { font-style: normal; }
-.legend .scale { display: inline-flex; align-items: center; gap: ${SPACING.sm}px; }
-.legend b { font-weight: ${EMPHASIZED_WEIGHT.label}; }
-
+.legend b { font-weight: ${EMPHASIZED_WEIGHT.label}; color: var(--md-sys-color-on-surface); }
 `,
   });
 }
 
-/** Static pin and target ring: position stays visible in grayscale and on small islands. */
+/**
+ * 落点标记：定位针 + 靶心 + 一块朱砂底的名牌。
+ * 针与靶心保证小省份、岛国在灰度下也找得到；名牌画在针脚下方，不压在省名上。
+ */
 const MAP_MARKER_JS = `
-function marker(coord) {
-    return {
-        type: 'group', x: coord[0], y: coord[1],
-        children: [
-            { type: 'circle', shape: { cx: 0, cy: 0, r: 7 }, style: { fill: '${MAP_COLORS.markerHalo}', stroke: '${MAP_COLORS.marker}', lineWidth: 2 } },
-            { type: 'circle', shape: { cx: 0, cy: 0, r: 3 }, style: { fill: '${MAP_COLORS.marker}' } },
-            {
-                type: 'path',
-                shape: {
-                    d: 'M16 0c-5.523 0-10 4.477-10 10 0 10 10 22 10 22s10-12 10-22c0-5.523-4.477-10-10-10zM16 16c-3.314 0-6-2.686-6-6s2.686-6 6-6 6 2.686 6 6-2.686 6-6 6z',
-                    x: -9, y: -38, width: 18, height: 32
-                },
-                style: { fill: '${MAP_COLORS.marker}', stroke: '${MAP_COLORS.markerHalo}', lineWidth: 2 }
+function marker(coord, text, chartHeight) {
+    // 名牌默认在针脚下方；最南端的落点（海南）下方放不下，翻到针头上方
+    var below = coord[1] + 16 + 36 <= chartHeight - 6;
+    var children = [
+        { type: 'circle', shape: { cx: 0, cy: 0, r: 7 }, style: { fill: '${MAP_COLORS.markerHalo}', stroke: '${MAP_COLORS.marker}', lineWidth: 2 } },
+        { type: 'circle', shape: { cx: 0, cy: 0, r: 3 }, style: { fill: '${MAP_COLORS.marker}' } },
+        {
+            type: 'path',
+            shape: {
+                d: 'M16 0c-5.523 0-10 4.477-10 10 0 10 10 22 10 22s10-12 10-22c0-5.523-4.477-10-10-10zM16 16c-3.314 0-6-2.686-6-6s2.686-6 6-6 6 2.686 6 6-2.686 6-6 6z',
+                x: -9, y: -38, width: 18, height: 32
+            },
+            style: { fill: '${MAP_COLORS.marker}', stroke: '${MAP_COLORS.markerHalo}', lineWidth: 2 }
+        }
+    ];
+    if (text) {
+        children.push({
+            type: 'text',
+            style: {
+                x: 0, y: below ? 16 : -46, text: text, textAlign: 'center', textVerticalAlign: below ? 'top' : 'bottom',
+                fill: '${MAP_COLORS.onSelected}', backgroundColor: '${MAP_COLORS.selected}',
+                padding: [5, 12], borderRadius: 10,
+                fontSize: 16, fontWeight: 600, fontFamily: ${JSON.stringify(MAP_FONT)}
             }
-        ]
-    };
+        });
+    }
+    return { type: 'group', x: coord[0], y: coord[1], children: children };
 }
 `;
+
+/** 经纬度读成人话：「南纬 9.2° · 西经 75.0°」。 */
+function coordinateText([lng, lat]: [number, number]): string {
+  return `${lat >= 0 ? "北纬" : "南纬"} ${Math.abs(lat).toFixed(1)}°<span class="sep">·</span>${lng >= 0 ? "东经" : "西经"} ${Math.abs(lng).toFixed(1)}°`;
+}
 
 function renderWorldMap(
   birthResultInWorld: BirthResultInWorld,
@@ -1459,7 +1476,7 @@ myChart.setOption({
             return marker(api.coord([
                 api.value(0, params.dataIndex),
                 api.value(1, params.dataIndex)
-            ]));
+            ]), ${JSON.stringify(birthResultInWorld.dictName)}, api.getHeight());
         }
     }]
 });
@@ -1467,18 +1484,28 @@ myChart.setOption({
 
   return buildMapPage({
     docTitle: "世界投胎落点",
-    title: `${birthResultInWorld.dictContinent} · ${birthResultInWorld.dictName}`,
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>第 ${birthResultInWorld.index} 次轮回 · 已落人间`,
+    eyebrow: "投胎模拟器 · 世界",
+    title: birthResultInWorld.dictName,
+    subtitle: subtitleOf(
+      username,
+      `第 ${birthResultInWorld.index} 次轮回 · 已落人间`,
+    ),
+    tags: chip(birthResultInWorld.dictContinent, "ink"),
     seal: "寰宇",
-    chartHeight: 372,
+    chartHeight: 400,
     legend: `<span class="key"><i aria-hidden="true">◎</i>本次落点</span>
-<span>${birthResultInWorld.dictContinent} · <b>${birthResultInWorld.dictName}</b></span>
 <span class="spacer"></span>
-<span>经纬 ${birthResultInWorld.coordinate[0].toFixed(1)}, ${birthResultInWorld.coordinate[1].toFixed(1)}</span>`,
+<span>${coordinateText(birthResultInWorld.coordinate)}</span>`,
     colophonRight: "天涯何处不为家",
     script,
   });
 }
+
+/** 港澳的省名标签错开的偏移量（像素）。 */
+const SMALL_REGION_LABEL_OFFSET: Record<string, [number, number]> = {
+  香港: [24, -4],
+  澳门: [-24, 10],
+};
 
 function renderChinaMap(
   birthResults: BirthResultInChina[],
@@ -1487,7 +1514,7 @@ function renderChinaMap(
   chinaData: China,
   totalProvinceCount: number,
 ): string {
-  // 足迹以同色相的浅色阶呈现，本次落点使用 primary 与对应 on-primary。
+  // 足迹以赤金色阶呈现，本次落点用朱砂。
   const provinceWeights: { [province: string]: number } = {};
   for (const result of birthResults) {
     provinceWeights[result.province] =
@@ -1497,28 +1524,32 @@ function renderChinaMap(
   const weights = Object.values(provinceWeights);
   const maxWeight = weights.length ? Math.max(...weights) : 0;
 
-  const regions = Object.entries(provinceWeights).filter(([name]) => name !== birthResult.province).map(([name, weight]) => ({
-    name,
-    itemStyle: { areaColor: heatColor(maxWeight ? weight / maxWeight : 0) },
-    label: { color: MAP_COLORS.label },
-  }));
+  const styles = new Map<string, any>();
+  for (const [name, weight] of Object.entries(provinceWeights)) {
+    if (name === birthResult.province) continue;
+    styles.set(name, {
+      name,
+      itemStyle: { areaColor: heatColor(maxWeight ? weight / maxWeight : 0) },
+      label: { color: MAP_COLORS.label },
+    });
+  }
 
-  regions.push({
+  // 落点省自己的名字交给标记上的名牌（有朱砂底，小省份也读得清），区域标签关掉免得与针重叠。
+  styles.set(birthResult.province, {
     name: birthResult.province,
     itemStyle: { areaColor: MAP_COLORS.selected, borderColor: MAP_COLORS.selected, borderWidth: 1.4 },
-    // 落点文字有独立底色，小省份也不会把白字挤到浅色邻省上。
-    label: {
-      color: MAP_COLORS.onSelected,
-      backgroundColor: MAP_COLORS.selected,
-      borderRadius: SPACING.xs,
-      padding: [SPACING.xs, SPACING.sm],
-      offset: [0, 20],
-      formatter: `${birthResult.province}\n本次落点`,
-      fontSize: TYPE.labelSmall.size,
-      fontWeight: EMPHASIZED_WEIGHT.label,
-    },
+    label: { show: false },
     silent: true,
-  } as any);
+  });
+
+  // 香港、澳门相距不到一个字宽，两个省名会叠成一团：一个往右上、一个往左下错开。
+  for (const [name, offset] of Object.entries(SMALL_REGION_LABEL_OFFSET)) {
+    if (name === birthResult.province) continue;
+    const style = styles.get(name) ?? { name };
+    style.label = { ...style.label, offset };
+    styles.set(name, style);
+  }
+  const regions = [...styles.values()];
 
   const feature = chinaData.features.find(
     (item) => item.properties.name === birthResult.province,
@@ -1527,9 +1558,13 @@ function renderChinaMap(
   const isSpecialRegion = ["香港", "澳门", "台湾"].includes(
     birthResult.province,
   );
-  const detail = isSpecialRegion
-    ? `${birthResult.province} · ${translateGenderChild(birthResult.gender)}`
-    : `${birthResult.province} · ${birthResult.category} · ${translateGenderChild(birthResult.gender)} · ${orderText(birthResult.order)}`;
+  const tags = isSpecialRegion
+    ? chip(translateGenderChild(birthResult.gender), birthResult.gender === "male" ? "azure" : "rose", true)
+    : [
+        chip(birthResult.category, "ink"),
+        chip(translateGenderChild(birthResult.gender), birthResult.gender === "male" ? "azure" : "rose", true),
+        chip(orderText(birthResult.order), "ink"),
+      ].join("");
 
   const script = `
 const myChart = echarts.init(document.getElementById('map'));
@@ -1544,7 +1579,7 @@ myChart.setOption({
         roam: false,
         zoom: 1.2,
         silent: true,
-        label: { show: true, fontSize: ${TYPE.labelSmall.size}, color: '${MAP_COLORS.label}' },
+        label: { show: true, fontSize: 14, fontWeight: 500, color: '${MAP_COLORS.label}' },
         itemStyle: { areaColor: '${MAP_COLORS.land}', borderColor: '${MAP_COLORS.boundary}', borderWidth: 0.8 },
         emphasis: { disabled: true },
         regions: ${JSON.stringify(regions)}
@@ -1562,7 +1597,7 @@ myChart.setOption({
             return marker(api.coord([
                 api.value(0, params.dataIndex),
                 api.value(1, params.dataIndex)
-            ]));
+            ]), ${JSON.stringify(birthResult.province)}, api.getHeight());
         }
     }]`
         : ""
@@ -1572,18 +1607,21 @@ myChart.setOption({
 
   return buildMapPage({
     docTitle: "中国投胎落点",
-    title: detail,
-    subtitle: `命主 ${esc(username)}<span class="sep">❖</span>第 ${birthResult.index} 次轮回 · 已落人间`,
+    eyebrow: "投胎模拟器 · 中国",
+    title: birthResult.province,
+    subtitle: subtitleOf(username, `第 ${birthResult.index} 次轮回 · 已落人间`),
+    tags,
     seal: "降生",
-    chartHeight: 590,
+    chartHeight: 560,
     legend: `<span class="key"><i aria-hidden="true">◎</i>本次落点</span>
-<span class="scale"><span>旧迹权重 低</span><span class="ramp" aria-hidden="true"></span><span>高</span></span>
+<span class="scale"><span>旧迹深浅　浅</span><span class="ramp" aria-hidden="true"></span><span>深</span></span>
 <span class="spacer"></span>
 <span>已踏足 <b>${Object.keys(provinceWeights).length}</b> / ${totalProvinceCount} 省</span>`,
     colophonRight: "山河万里，此处是家",
     script,
   });
 }
+
 
 /* ------------------------------------------------------------------ *
  *  文本兜底
@@ -1610,14 +1648,14 @@ function rankingsText(
 
   const rows = scored.slice(0, Math.max(1, count));
   const selfRank =
-    scored.findIndex((row) => row.userId === options.selfUserId) + 1;
+    scored.find((row) => row.userId === options.selfUserId)?.rank ?? 0;
   const standing = selfRank > 0 ? `你位居第 ${selfRank}` : `你尚未上榜`;
 
   return [
     `📋 ${textTitle(options.title)}`,
     ...rows.map(
-      (row, index) =>
-        `• ${index + 1} ${esc(trimUsername(row.username))} ${row.value} ${options.valueLabel}`,
+      (row) =>
+        `• ${row.rank} ${esc(trimUsername(row.username))} ${row.value} ${options.valueLabel}`,
     ),
     `${standing} · 发送「${options.tip}」刷新你的名次。`,
   ].join("\n");
@@ -2930,6 +2968,7 @@ export function apply(ctx: Context, config: Config) {
         userRank,
         userStillbirthsRank,
         numberOfStillbirthsInChina,
+        totalProvinceCount,
       ),
     );
   }
