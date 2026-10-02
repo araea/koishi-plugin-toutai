@@ -1,5 +1,6 @@
 import { MAP_SCHEME, MAP_COLORS, HEAT_RAMP, heatColor } from './map-theme'
 import { present } from './ux'
+import { helpOf } from './help'
 import { Context, h, Schema } from "koishi";
 import {} from "koishi-plugin-puppeteer";
 import {
@@ -28,7 +29,7 @@ export const usage = `## 使用
 
 | 指令 | 说明 |
 | --- | --- |
-| \`toutai\` | 查看帮助（需启用 help 插件） |
+| \`toutai\` | 查看指令列表 |
 | \`toutai.投胎中国\` | 开始中国模拟 |
 | \`toutai.投胎世界\` | 开始世界模拟 |
 | \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 查看记录 |
@@ -1888,9 +1889,28 @@ export function apply(ctx: Context, config: Config) {
     AN: "南极洲",
   };
 
-  // 以下几个入口指令没有自己的动作：装了 help 插件时由它列出子指令，没装时静默。
-  // 不要在动作里 `session.execute("… -h")`——`-h` 是 help 插件加的选项，缺它指令会无限调用自己。
-  ctx.command("toutai", "投胎模拟器 · 一趟人间的随机开局");
+  // 入口指令自己列出子指令，不依赖 help 插件；带 -h 时仍由 help 插件接手。
+  const sendHelp = (session: any, name: string, tail: string) => {
+    const { title, entries } = helpOf(session, name);
+    return sendMessage(
+      session,
+      [
+        `📋 ${name === "toutai" ? title : `${name} · ${title}`}`,
+        ...entries.map(({ name, description }) => `　${name}　${description}`),
+        `　${tail}`,
+      ].join("\n"),
+    );
+  };
+
+  ctx
+    .command("toutai", "投胎模拟器 · 一趟人间的随机开局")
+    .action(({ session }) =>
+      sendHelp(
+        session,
+        "toutai",
+        "发送「toutai.投胎中国」或「toutai.投胎世界」开始；记录与排行榜下还有分项，发送其指令名展开。",
+      ),
+    );
 
   ctx.command("toutai.投胎中国", "投胎到中国").action(async ({ session }) => {
     const { userId } = session;
@@ -2103,7 +2123,9 @@ export function apply(ctx: Context, config: Config) {
     }
   });
 
-  ctx.command("toutai.中国投胎记录", "列出各项投胎记录");
+  ctx
+    .command("toutai.中国投胎记录", "列出各项投胎记录")
+    .action(({ session }) => sendHelp(session, "toutai.中国投胎记录", "指令后可加 @某人，查看对方的记录。"));
 
   ctx
     .command("toutai.中国投胎记录.总览 [targetUser:text]", "查看降生与夭折的总账")
@@ -2339,7 +2361,9 @@ export function apply(ctx: Context, config: Config) {
       );
     });
 
-  ctx.command("toutai.世界投胎记录", "列出各项投胎记录");
+  ctx
+    .command("toutai.世界投胎记录", "列出各项投胎记录")
+    .action(({ session }) => sendHelp(session, "toutai.世界投胎记录", "指令后可加 @某人，查看对方的记录。"));
 
   ctx
     .command("toutai.世界投胎记录.总览 [targetUser:text]", "查看降生与夭折的总账")
@@ -2487,7 +2511,9 @@ export function apply(ctx: Context, config: Config) {
       );
     });
 
-  ctx.command("toutai.中国投胎排行榜", "列出各类投胎排行榜");
+  ctx
+    .command("toutai.中国投胎排行榜", "列出各类投胎排行榜")
+    .action(({ session }) => sendHelp(session, "toutai.中国投胎排行榜", "指令后可加人数，如「toutai.中国投胎排行榜.成功次数 10」。"));
 
   ctx
     .command(
@@ -2600,7 +2626,9 @@ export function apply(ctx: Context, config: Config) {
       );
   });
 
-  ctx.command("toutai.世界投胎排行榜", "列出各类投胎排行榜");
+  ctx
+    .command("toutai.世界投胎排行榜", "列出各类投胎排行榜")
+    .action(({ session }) => sendHelp(session, "toutai.世界投胎排行榜", "指令后可加人数，如「toutai.世界投胎排行榜.成功次数 10」。"));
 
   ctx
     .command(
