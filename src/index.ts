@@ -28,7 +28,7 @@ export const usage = `## 使用
 
 | 指令 | 说明 |
 | --- | --- |
-| \`toutai\` | 查看帮助 |
+| \`toutai\` | 查看帮助（需启用 help 插件） |
 | \`toutai.投胎中国\` | 开始中国模拟 |
 | \`toutai.投胎世界\` | 开始世界模拟 |
 | \`toutai.中国投胎记录\` / \`toutai.世界投胎记录\` | 查看记录 |
@@ -1888,9 +1888,9 @@ export function apply(ctx: Context, config: Config) {
     AN: "南极洲",
   };
 
-  ctx.command("toutai", "投胎模拟器 · 一趟人间的随机开局").action(async ({ session }) => {
-    await session.execute(`toutai -h`);
-  });
+  // 以下几个入口指令没有自己的动作：装了 help 插件时由它列出子指令，没装时静默。
+  // 不要在动作里 `session.execute("… -h")`——`-h` 是 help 插件加的选项，缺它指令会无限调用自己。
+  ctx.command("toutai", "投胎模拟器 · 一趟人间的随机开局");
 
   ctx.command("toutai.投胎中国", "投胎到中国").action(async ({ session }) => {
     const { userId } = session;
@@ -2103,11 +2103,7 @@ export function apply(ctx: Context, config: Config) {
     }
   });
 
-  ctx
-    .command("toutai.中国投胎记录", "列出各项投胎记录")
-    .action(async ({ session }, startIndex) => {
-      await session.execute(`toutai.中国投胎记录 -h`);
-    });
+  ctx.command("toutai.中国投胎记录", "列出各项投胎记录");
 
   ctx
     .command("toutai.中国投胎记录.总览 [targetUser:text]", "查看降生与夭折的总账")
@@ -2343,11 +2339,7 @@ export function apply(ctx: Context, config: Config) {
       );
     });
 
-  ctx
-    .command("toutai.世界投胎记录", "列出各项投胎记录")
-    .action(async ({ session }, startIndex) => {
-      await session.execute(`toutai.世界投胎记录 -h`);
-    });
+  ctx.command("toutai.世界投胎记录", "列出各项投胎记录");
 
   ctx
     .command("toutai.世界投胎记录.总览 [targetUser:text]", "查看降生与夭折的总账")
@@ -2495,11 +2487,7 @@ export function apply(ctx: Context, config: Config) {
       );
     });
 
-  ctx
-    .command("toutai.中国投胎排行榜", "列出各类投胎排行榜")
-    .action(async ({ session }, startIndex) => {
-      await session.execute(`toutai.中国投胎排行榜 -h`);
-    });
+  ctx.command("toutai.中国投胎排行榜", "列出各类投胎排行榜");
 
   ctx
     .command(
@@ -2612,11 +2600,7 @@ export function apply(ctx: Context, config: Config) {
       );
   });
 
-  ctx
-    .command("toutai.世界投胎排行榜", "列出各类投胎排行榜")
-    .action(async ({ session }, startIndex) => {
-      await session.execute(`toutai.世界投胎排行榜 -h`);
-    });
+  ctx.command("toutai.世界投胎排行榜", "列出各类投胎排行榜");
 
   ctx
     .command(

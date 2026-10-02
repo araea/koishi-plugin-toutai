@@ -19,7 +19,7 @@ npm i koishi-plugin-toutai
 
 | 指令 | 说明 |
 | --- | --- |
-| `toutai` | 查看帮助 |
+| `toutai` | 查看帮助（需启用 help 插件） |
 | `toutai.投胎中国` | 开始中国模拟 |
 | `toutai.投胎世界` | 开始世界模拟 |
 | `toutai.中国投胎记录` / `toutai.世界投胎记录` | 查看记录 |
