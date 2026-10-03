@@ -15,7 +15,7 @@ npm i koishi-plugin-toutai
 
 ## 快速使用
 
-发送 `toutai.投胎中国` 或 `toutai.投胎世界` 开始模拟。两次投胎之间有冷却时间，可在配置中调整。
+发送 `toutai.投胎中国` 或 `toutai.投胎世界` 开始模拟。两次投胎之间有冷却时间，由 `nextReincarnationCooldownSeconds` 调整。
 
 | 指令 | 说明 |
 | --- | --- |
@@ -39,9 +39,9 @@ npm i koishi-plugin-toutai
 
 ## 限制 / 风险
 
-需要 `database` 服务保存记录，以及 `puppeteer` 服务渲染投胎结果地图。地图图片默认随投胎结果发送（`isMapImageIncludedAfterRebirth`）。
+需要 `database` 服务保存记录，以及 `puppeteer` 服务渲染投胎结果地图。
 
-## 必要链接
+## 链接
 
 - [设计系统](DESIGN_SYSTEM.md)
 - [MIT](LICENSE-MIT) / [Apache-2.0](LICENSE-APACHE)

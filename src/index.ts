@@ -20,7 +20,7 @@ export const inject = {
 };
 export const usage = `## 使用
 
-发送 \`toutai.投胎中国\` 或 \`toutai.投胎世界\` 开始模拟。投胎之间有冷却，可在配置里调整。
+发送 \`toutai.投胎中国\` 或 \`toutai.投胎世界\` 开始模拟。
 
 ## 指令
 
