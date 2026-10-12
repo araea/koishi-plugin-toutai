@@ -1839,6 +1839,45 @@ function firstAppearanceText(
   ].join("\n");
 }
 
+/**
+ * 世界投胎落在哪个国家：按 `birthRatePercentage` 累加抽取，权重占比就是命中概率。
+ *
+ * 这里原来是「先摇一个固定阈值，再反复均匀抽国家，谁的 `birthRatePercentage * 100`
+ * 超过阈值就算谁」——那等价于在「通过阈值的国家集合」里等概率抽取，概率被绑到了
+ * 国家数量上，而不是权重上：非洲在 214 国里占 54 个、出生率又最高，实测被放大到
+ * 61.0%（按权重应为 42.4%），印度只剩 0.26%（应为 0.41%，真实出生人数口径 16.7%）；
+ * 而且当所有国家的 `* 100` 都不大于阈值时，那个 while 会一直转下去。
+ */
+export function simulateRebirthInWorld(
+  worldData: WorldBirthrateData[],
+): string | null {
+  let total = 0;
+  for (const country of worldData) {
+    if (country.birthRatePercentage > 0) total += country.birthRatePercentage;
+  }
+
+  // 权重全为 0（数据缺失）时退化成等概率，至少不会卡住。
+  if (total <= 0) {
+    if (!worldData.length) return null;
+    return worldData[Math.floor(Math.random() * worldData.length)].name;
+  }
+
+  const randomValue = Math.random() * total;
+  let accumulated = 0;
+  for (const country of worldData) {
+    if (country.birthRatePercentage <= 0) continue;
+    accumulated += country.birthRatePercentage;
+    if (accumulated > randomValue) return country.name;
+  }
+
+  // 浮点误差兜底：取最后一个有权重的国家。
+  for (let index = worldData.length - 1; index >= 0; index--) {
+    if (worldData[index].birthRatePercentage > 0) return worldData[index].name;
+  }
+
+  return null;
+}
+
 export function apply(ctx: Context, config: Config) {
   ctx.database.extend(
     "toutai_records",
@@ -2791,25 +2830,6 @@ export function apply(ctx: Context, config: Config) {
         },
       );
   });
-
-  function simulateRebirthInWorld(
-    worldData: WorldBirthrateData[],
-  ): string | null {
-    const randomValue = Math.random();
-
-    let selectedCountry: WorldBirthrateData = null;
-
-    while (!selectedCountry) {
-      const randomIndex = Math.floor(Math.random() * worldData.length);
-      const selected = worldData[randomIndex];
-
-      if (selected.birthRatePercentage * 100 > randomValue) {
-        selectedCountry = selected;
-      }
-    }
-
-    return selectedCountry ? selectedCountry.name : null;
-  }
 
   /** 在全体玩家中求名次：比自己高的人数 + 1，同分并列。 */
   function rankAmong(
