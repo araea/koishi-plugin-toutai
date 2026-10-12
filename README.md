@@ -17,6 +17,8 @@ npm i koishi-plugin-toutai
 
 发送 `toutai.投胎中国` 或 `toutai.投胎世界` 开始模拟。两次投胎之间有冷却时间，由 `nextReincarnationCooldownSeconds` 调整。
 
+落点按出生人数抽取：世界投胎按各国年出生人数（人口 × 出生率）加权，中国投胎按各省分城乡、胎次、性别的出生人数加权，概率就是现实里新生儿的分布。
+
 | 指令 | 说明 |
 | --- | --- |
 | `toutai` | 查看指令列表 |

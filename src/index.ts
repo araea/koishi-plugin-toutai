@@ -170,12 +170,12 @@ interface CountryData {
   [countryCode: string]: Country;
 }
 
-interface WorldBirthrateData {
+/** 一个国家的人口（百万）与出生率（‰）；数据缺失的国家 `birthRate` 为 `null`。 */
+export interface WorldBirthrateData {
   country: string;
   name: string;
   population: number;
-  birthRate: number;
-  birthRatePercentage: number;
+  birthRate: number | null;
 }
 
 interface NeonatalMortalityRateData {
@@ -1839,43 +1839,42 @@ function firstAppearanceText(
   ].join("\n");
 }
 
+/** 一个国家的年出生人数（人口 × 出生率）；数据缺失记 0，抽不到。 */
+export function birthsOf(country: WorldBirthrateData): number {
+  const births = country.population * (country.birthRate ?? 0);
+  return births > 0 ? births : 0;
+}
+
 /**
- * 世界投胎落在哪个国家：按 `birthRatePercentage` 累加抽取，权重占比就是命中概率。
+ * 世界投胎落在哪个国家：按年出生人数累加抽取，权重占比就是命中概率。
+ * 降生在某国的概率本该是全世界新生儿里出在那里的份额，中国投胎也是这个口径。
  *
- * 这里原来是「先摇一个固定阈值，再反复均匀抽国家，谁的 `birthRatePercentage * 100`
- * 超过阈值就算谁」——那等价于在「通过阈值的国家集合」里等概率抽取，概率被绑到了
- * 国家数量上，而不是权重上：非洲在 214 国里占 54 个、出生率又最高，实测被放大到
- * 61.0%（按权重应为 42.4%），印度只剩 0.26%（应为 0.41%，真实出生人数口径 16.7%）；
- * 而且当所有国家的 `* 100` 都不大于阈值时，那个 while 会一直转下去。
+ * 别退回「固定阈值 + 反复均匀抽国家」的拒绝采样：它等价于在过线的国家里等概率
+ * 抽取，概率绑在国家数量上而不是权重上，非洲（214 国占 54 个）被放大到 61%，
+ * 阈值过高时还会死循环（#3）。出生率（‰）不乘人口也不对：那样非洲 42%、印度
+ * 0.4%，按出生人数是非洲 34%、亚洲 50%、印度 16.7%。
+ *
+ * `random` 默认 `Math.random`，测试里换成确定的序列。没有任何国家有权重时返回 `null`。
  */
 export function simulateRebirthInWorld(
   worldData: WorldBirthrateData[],
+  random: () => number = Math.random,
 ): string | null {
   let total = 0;
+  for (const country of worldData) total += birthsOf(country);
+
+  let remaining = random() * total;
+  let last: string | null = null;
   for (const country of worldData) {
-    if (country.birthRatePercentage > 0) total += country.birthRatePercentage;
+    const births = birthsOf(country);
+    if (births === 0) continue;
+    last = country.name;
+    remaining -= births;
+    if (remaining < 0) return country.name;
   }
 
-  // 权重全为 0（数据缺失）时退化成等概率，至少不会卡住。
-  if (total <= 0) {
-    if (!worldData.length) return null;
-    return worldData[Math.floor(Math.random() * worldData.length)].name;
-  }
-
-  const randomValue = Math.random() * total;
-  let accumulated = 0;
-  for (const country of worldData) {
-    if (country.birthRatePercentage <= 0) continue;
-    accumulated += country.birthRatePercentage;
-    if (accumulated > randomValue) return country.name;
-  }
-
-  // 浮点误差兜底：取最后一个有权重的国家。
-  for (let index = worldData.length - 1; index >= 0; index--) {
-    if (worldData[index].birthRatePercentage > 0) return worldData[index].name;
-  }
-
-  return null;
+  // 浮点误差让累加线略短于 total 时，落在最后一个有权重的国家。
+  return last;
 }
 
 export function apply(ctx: Context, config: Config) {
